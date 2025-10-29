@@ -11,7 +11,8 @@ import {
     KeyId,
     EnumerableKeyBindingSet,
     KeyBindingSet,
-    KeyBindingWithSignature
+    KeyBindingWithSignature,
+    KeyBindingWithSignatureTimestamp
 } from "./utils/EnumerableKeyBindingSet.sol";
 
 error ZeroAddress(string reason);
@@ -66,7 +67,7 @@ abstract contract HoprAnnouncementsEvents {
  * A node MUST NOT bind the same off-chain keys to multiple chain-keys.
  * Key ids cannot be re-used or overwritten.
  * Key id 0 is reserved and MUST NOT be used.
- * The range of valid key ids is [1, 2^32 - 1].
+ * The range of valid key ids is [0, 2^32 - 1].
  *
  * The chain-key is used to retrieve the multiaddress base of a node.
  * By knowing the key id of a peer, a node can retrieve the off-chain keys and then the multiaddress base.
@@ -213,8 +214,8 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
      *      The key id can be derived from the index in the array (starting from 0, capped at MAX_KEY_ID).
      * Note: this function is gas expensive.
      */
-    function getAllKeyBindings() external view returns (KeyBindingWithSignature[] memory) {
-        return _keyBindings._values;
+    function getAllKeyBindings() external view returns (KeyBindingWithSignatureTimestamp[] memory) {
+        return _keyBindings.values();
     }
 
     function isOffchainKeyBound(bytes32 ed25519_pub_key) external view returns (bool) {
@@ -228,9 +229,9 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
     function tryGetKeyBinding(bytes32 ed25519_pub_key)
         external
         view
-        returns (bool, KeyId, KeyBindingWithSignature memory)
+        returns (bool, KeyId, KeyBindingWithSignatureTimestamp memory)
     {
-        (bool success, uint256 possibleKeyId, KeyBindingWithSignature memory keyBinding) =
+        (bool success, uint256 possibleKeyId, KeyBindingWithSignatureTimestamp memory keyBinding) =
             _keyBindings.tryGet(ed25519_pub_key);
         return (success, KeyId.wrap(uint32(possibleKeyId)), keyBinding);
     }
@@ -238,7 +239,7 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
     /**
      * @dev Returns the key binding at a specific key id.
      */
-    function getKeyBindingWithKeyId(KeyId keyId) external view returns (KeyBindingWithSignature memory) {
+    function getKeyBindingWithKeyId(KeyId keyId) external view returns (KeyBindingWithSignatureTimestamp memory) {
         uint256 index = uint256(uint32(KeyId.unwrap(keyId)));
         return _keyBindings.at(index);
     }
@@ -286,8 +287,9 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
         bytes32 ed25519_pub_key
     )
         internal
+        returns (uint256 keyIdIndex)
     {
-        _keyBindings.add(KeyBindingWithSignature(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
+        keyIdIndex = _keyBindings.add(KeyBindingWithSignature(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
         indexEvent(abi.encodePacked(KeyBinding.selector, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
         emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress);
     }

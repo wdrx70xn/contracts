@@ -7,6 +7,7 @@ import {
     ZeroAddress,
     EmptyMultiaddr,
     KeyBindingWithSignature,
+    KeyBindingWithSignatureTimestamp,
     KeyId
 } from "../src/Announcements.sol";
 import { HoprNodeSafeRegistry } from "../src/node-stake/NodeSafeRegistry.sol";
@@ -244,16 +245,16 @@ contract AnnouncementsTest is Test {
     function testFuzz_GetKeyBinding(bytes32[] memory bytes32Vals) public respectCurveRange(bytes32Vals) {
         uint256 createdCount = _helperCreateKeyBindingSet(bytes32Vals);
 
-        KeyBindingWithSignature[] memory results = announcements.getAllKeyBindings();
+        KeyBindingWithSignatureTimestamp[] memory results = announcements.getAllKeyBindings();
 
         assertEq(results.length, createdCount);
         assertEq(results.length, announcements.getKeyBindingCount());
 
         for (uint256 i = 0; i < createdCount; i++) {
-            KeyBindingWithSignature memory result_i = announcements.getKeyBindingWithKeyId(KeyId.wrap(uint32(i)));
+            KeyBindingWithSignatureTimestamp memory result_i = announcements.getKeyBindingWithKeyId(KeyId.wrap(uint32(i)));
             assertTrue(announcements.isOffchainKeyBound(result_i.ed25519_pub_key));
 
-            (bool success, KeyId index, KeyBindingWithSignature memory tryBinding_i) =
+            (bool success, KeyId index, KeyBindingWithSignatureTimestamp memory tryBinding_i) =
                 announcements.tryGetKeyBinding(result_i.ed25519_pub_key);
             assertTrue(success);
             assertEq(KeyId.unwrap(index), uint32(i));
@@ -263,7 +264,7 @@ contract AnnouncementsTest is Test {
             assertTrue(success2);
             assertEq(uint32(KeyId.unwrap(keyId)), i);
 
-            KeyBindingWithSignature memory at_i = announcements.getKeyBindingWithKeyId(KeyId.wrap(uint32(i)));
+            KeyBindingWithSignatureTimestamp memory at_i = announcements.getKeyBindingWithKeyId(KeyId.wrap(uint32(i)));
             assertTrue(_compareKeyBinding(at_i, result_i));
 
             bytes32 pubkey_i = announcements.getOffchainKeyWithKeyId(KeyId.wrap(uint32(i)));
@@ -299,12 +300,12 @@ contract AnnouncementsTest is Test {
         return counter;
     }
 
-    function _compareKeyBinding(KeyBindingWithSignature memory a, KeyBindingWithSignature memory b)
+    function _compareKeyBinding(KeyBindingWithSignatureTimestamp memory a, KeyBindingWithSignatureTimestamp memory b)
         private
         pure
         returns (bool)
     {
         return (a.ed25519_sig_0 == b.ed25519_sig_0 && a.ed25519_sig_1 == b.ed25519_sig_1
-                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key);
+                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key && a.boundTimestamp == b.boundTimestamp);
     }
 }
