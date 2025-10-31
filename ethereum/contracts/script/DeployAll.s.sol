@@ -26,6 +26,8 @@ contract DeployAllContractsScript is
 {
     using BoostUtilsLib for address;
 
+    uint256 public constant KEY_BINDING_FEE = 10_000_000 gwei;  // 0.01 HOPR in gwei unit
+
     bool internal isHoprChannelsDeployed;
     bool internal isHoprNetworkRegistryDeployed;
     address private owner;
@@ -257,7 +259,11 @@ contract DeployAllContractsScript is
             // deploy HoprAnnouncements contract and register with current NodeSafeRegistry
             currentNetworkDetail.addresses.announcements = deployCode(
                 "Announcements.sol:HoprAnnouncements",
-                abi.encode(currentNetworkDetail.addresses.nodeSafeRegistryAddress)
+                abi.encode(
+                    currentNetworkDetail.addresses.tokenContractAddress,
+                    currentNetworkDetail.addresses.nodeSafeRegistryAddress,
+                    KEY_BINDING_FEE
+                )
             );
         }
     }

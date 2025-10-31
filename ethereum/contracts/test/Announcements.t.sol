@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity >=0.6.0 <0.9.0;
 
-import { Test, Vm } from "forge-std/Test.sol";
+import { Test, Vm, stdStorage, StdStorage } from "forge-std/Test.sol";
+import { ERC1820RegistryFixtureTest } from "./utils/ERC1820Registry.sol";
 import {
     HoprAnnouncements,
-    ZeroAddress,
-    EmptyMultiaddr,
     KeyBindingWithSignature,
     KeyBindingWithSignatureTimestamp,
-    KeyId
+    KeyId,
+    HoprAnnouncementsEvents
 } from "../src/Announcements.sol";
 import { HoprNodeSafeRegistry } from "../src/node-stake/NodeSafeRegistry.sol";
+import { HoprToken } from "../src/static/HoprToken.sol";
 
 // Dummy since there is no verification happening on-chain
 bytes32 constant ED25519_SIG_0 = 0x000000000000000000000000000000000000000000000000000000000ed25519;
@@ -18,13 +19,18 @@ bytes32 constant ED25519_SIG_1 = 0x100000000000000000000000000000000000000000000
 bytes32 constant ED25519_PUB_KEY = 0x3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c;
 
 string constant MULTIADDRESS = "/ip6/2604:1380:2000:7a00::1/udp/4001/quic";
+uint256 constant DEFAULT_KEY_BINDING_FEE = 10_000_000 gwei; // 0.01 wxHOPR tokens
+uint256 constant NEW_KEY_BINDING_FEE = 1_000_000 gwei; // 0.001 wxHOPR tokens
 
 /// forge-lint:disable-next-item(mixed-case-variable)
-contract AnnouncementsTest is Test {
+contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncementsEvents {
+    using stdStorage for StdStorage;
+
     HoprNodeSafeRegistry safeRegistry;
     HoprAnnouncements announcements;
-
-    event KeyBinding(bytes32 ed25519_sig_0, bytes32 ed25519_sig_1, bytes32 ed25519_pub_key, address chain_key);
+    HoprToken hoprToken;
+    address public deployer;
+    address public callerSafe;
 
     modifier respectCurveRange(bytes32[] memory keys) {
         // Seckp256k1 curve order
@@ -41,31 +47,77 @@ contract AnnouncementsTest is Test {
         _;
     }
 
-    function setUp() public {
+    modifier callerNodeIsUnused(address callerNode) {
+        assumeUnusedAddress(callerNode);
+        _;
+    }
+
+    modifier mockNodeToSafe(address nodeAddress, address safeAddress) {
+        vm.mockCall(
+            address(safeRegistry),
+            abi.encodeWithSignature("nodeToSafe(address)", nodeAddress),
+            abi.encode(safeAddress)
+        );
+        _;
+    }
+
+    modifier mockMintBalance(address to, uint256 amount) {
+        // manipulate the caller's token balance
+        vm.prank(deployer);
+        hoprToken.mint(to, amount, '', '');
+        _;
+    }
+
+    function setUp() public override {
+        super.setUp();
+
+        deployer = vm.addr(98765);
+        callerSafe = vm.addr(56789);
+
+        vm.startPrank(deployer);
         safeRegistry = new HoprNodeSafeRegistry();
-        announcements = new HoprAnnouncements(safeRegistry);
+        hoprToken = new HoprToken();
+        announcements = new HoprAnnouncements(address(hoprToken), safeRegistry, DEFAULT_KEY_BINDING_FEE);
+        // grant deployer minter role to mint tokens for testing
+        hoprToken.grantRole(hoprToken.MINTER_ROLE(), deployer);
+        vm.stopPrank();
     }
 
     function testRevert_ZeroAddressOnDeployment() public {
-        vm.expectRevert(abi.encodeWithSelector(ZeroAddress.selector, "safeRegistry must not be empty"));
-        announcements = new HoprAnnouncements(HoprNodeSafeRegistry(address(0)));
+        vm.expectRevert(abi.encodeWithSelector(HoprAnnouncements.ZeroAddress.selector, "_token must not be empty"));
+        announcements = new HoprAnnouncements(address(0), safeRegistry, DEFAULT_KEY_BINDING_FEE);
+
+        vm.expectRevert(abi.encodeWithSelector(HoprAnnouncements.ZeroAddress.selector, "_safeRegistry must not be empty"));
+        announcements = new HoprAnnouncements(address(hoprToken), HoprNodeSafeRegistry(address(0)), DEFAULT_KEY_BINDING_FEE);
     }
 
-    function testFuzz_KeyBinding(address caller) public {
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
+    function testFuzz_KeyBinding(address callerNode) public
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, address(0))
+        mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
+    {
+        assertEq(hoprToken.balanceOf(callerNode), DEFAULT_KEY_BINDING_FEE);
+        assertEq(hoprToken.totalSupply(), DEFAULT_KEY_BINDING_FEE);
+
+        // prepare the key-binding payload, without announcing multiaddr
+        bytes memory keyBindPayload = abi.encode(
+            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, ''
         );
 
+        vm.prank(callerNode);
+        // expect KeyBinding event emitted
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, caller);
-
-        vm.prank(caller);
-        announcements.bindKeys(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+        // tokens are burned
+        assertEq(hoprToken.balanceOf(callerNode), 0);
+        assertEq(hoprToken.totalSupply(), 0);
+        // no multiaddr announced
+        string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
+        assertEq(registeredMultiAddress, '');
 
         vm.clearMockedCalls();
     }
-
-    event AddressAnnouncement(address node, string baseMultiaddr);
 
     function testFuzz_Announcements(address caller) public {
         vm.mockCall(
@@ -81,8 +133,6 @@ contract AnnouncementsTest is Test {
         vm.clearMockedCalls();
     }
 
-    event RevokeAnnouncement(address node);
-
     function testFuzz_AddressRevocation(address caller) public {
         vm.mockCall(
             address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
@@ -97,113 +147,116 @@ contract AnnouncementsTest is Test {
         vm.clearMockedCalls();
     }
 
-    function testFuzz_AllInOneAnnouncement(address caller) public {
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
-        );
-
-        vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, caller);
-
-        vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(caller, MULTIADDRESS);
-
-        bytes[] memory calls = new bytes[](2);
-
-        calls[0] = abi.encodeCall(announcements.bindKeys, (ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY));
-
-        calls[1] = abi.encodeCall(announcements.announce, (MULTIADDRESS));
-
-        vm.prank(caller);
-        announcements.multicall(calls);
-
-        vm.clearMockedCalls();
-    }
-
-    function testFuzz_BindKeyMaybeAnnounce(address caller) public {
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
-        );
-
-        vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, caller);
-
-        vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(caller, MULTIADDRESS);
-
-        vm.prank(caller);
-        announcements.bindKeysMaybeAnnounce(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS);
-
-        vm.clearMockedCalls();
-    }
-
-    function testFuzz_BindKeyMaybeAnnounceEmptyMultiAddress(address caller) public {
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
-        );
-
-        // Start the recorder
-        vm.recordLogs();
-
-        vm.prank(caller);
-        announcements.bindKeysMaybeAnnounce(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, "");
-
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        // only keybinding event was emitted
-        assertEq(entries.length, 1);
-        assertEq(entries[0].topics[0], keccak256("KeyBinding(bytes32,bytes32,bytes32,address)"));
-
-        vm.clearMockedCalls();
-    }
-
-    function testFuzz_BindKeysSafe(
-        address nodeAddress,
-        bytes32 ed25519_sig_0,
-        bytes32 ed25519_sig_1,
-        bytes32 ed25519_pub_key
-    )
-        public
+    function testFuzz_BindKeyAndAnnouncementFromNodeForTheFirstTime(address callerNode)
+    public 
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, address(0))
+        mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
     {
-        address safeAddress = vm.addr(888);
-        vm.assume(nodeAddress != address(0));
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", nodeAddress), abi.encode(safeAddress)
-        );
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, nodeAddress);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
-        vm.prank(safeAddress);
-        announcements.bindKeysSafe(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
+        // prepare the key-binding payload, with announcing multiaddr
+        bytes memory keyBindPayload = abi.encode(
+            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS
+        );
+
+        vm.prank(callerNode);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+
+        // tokens are burned
+        assertEq(hoprToken.balanceOf(callerNode), 0);
+        assertEq(hoprToken.totalSupply(), 0);
+        // no multiaddr announced
+        string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
+        assertEq(registeredMultiAddress, MULTIADDRESS);
 
         vm.clearMockedCalls();
     }
 
-    function testFuzz_BindKeysAnnounceSafe(
-        address nodeAddress,
-        bytes32 ed25519_sig_0,
-        bytes32 ed25519_sig_1,
-        bytes32 ed25519_pub_key
-    )
+    function testFuzz_BindKeyWithoutAnnouncementFromNodeForTheFirstTime(address callerNode)
         public
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, address(0))
+        mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
     {
-        address safeAddress = vm.addr(888);
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
-        vm.assume(nodeAddress != address(0));
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", nodeAddress), abi.encode(safeAddress)
+        // prepare the key-binding payload, without announcing multiaddr
+        bytes memory keyBindPayload = abi.encode(
+            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, ''
         );
 
+        vm.prank(callerNode);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+
+        // tokens are burned
+        assertEq(hoprToken.balanceOf(callerNode), 0);
+        assertEq(hoprToken.totalSupply(), 0);
+        // no multiaddr announced
+        string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
+        assertEq(registeredMultiAddress, '');
+
+        vm.clearMockedCalls();
+    }
+
+    function testFuzz_BindKeyAndAnnouncementFromSafeForTheFirstTime(address callerNode)
+        public 
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, callerSafe)
+        mockMintBalance(callerSafe, DEFAULT_KEY_BINDING_FEE)
+    {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, nodeAddress);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(nodeAddress, MULTIADDRESS);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
-        vm.prank(safeAddress);
-        announcements.bindKeysMaybeAnnounceSafe(
-            nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, MULTIADDRESS
+        // prepare the key-binding payload, with announcing multiaddr
+        bytes memory keyBindPayload = abi.encode(
+            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS
         );
+
+        vm.prank(callerSafe);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+
+        // tokens are burned
+        assertEq(hoprToken.balanceOf(callerSafe), 0);
+        assertEq(hoprToken.totalSupply(), 0);
+        // no multiaddr announced
+        string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
+        assertEq(registeredMultiAddress, MULTIADDRESS);
+
+        vm.clearMockedCalls();
+    }
+
+    function testFuzz_BindKeyWithoutAnnouncementFromSafeForTheFirstTime(address callerNode)
+        public 
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, callerSafe)
+        mockMintBalance(callerSafe, DEFAULT_KEY_BINDING_FEE)
+    {
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+
+        // prepare the key-binding payload, with announcing multiaddr
+        bytes memory keyBindPayload = abi.encode(
+            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, ''
+        );
+
+        vm.prank(callerSafe);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+
+        // tokens are burned
+        assertEq(hoprToken.balanceOf(callerSafe), 0);
+        assertEq(hoprToken.totalSupply(), 0);
+        // no multiaddr announced
+        string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
+        assertEq(registeredMultiAddress, '');
 
         vm.clearMockedCalls();
     }
@@ -238,8 +291,8 @@ contract AnnouncementsTest is Test {
     }
 
     function testRevert_EmptyMultiAddr() public {
-        vm.expectRevert(EmptyMultiaddr.selector);
-        announcements.announce("");
+        vm.expectRevert(HoprAnnouncements.EmptyMultiaddr.selector);
+        announcements.announce('');
     }
 
     function testFuzz_GetKeyBinding(bytes32[] memory bytes32Vals) public respectCurveRange(bytes32Vals) {
@@ -274,7 +327,7 @@ contract AnnouncementsTest is Test {
         vm.clearMockedCalls();
     }
 
-    function test_GetKeyIdRange() public {
+    function test_GetKeyIdRange() public view {
         (uint32 minKeyId, uint32 maxKeyId) = announcements.getKeyIdRange();
         assertEq(minKeyId, 0);
         assertEq(maxKeyId, type(uint32).max);
@@ -286,14 +339,26 @@ contract AnnouncementsTest is Test {
     function _helperCreateKeyBindingSet(bytes32[] memory bytes32Vals) private returns (uint256) {
         uint256 counter = 0;
         for (uint256 i = 0; i < bytes32Vals.length; i++) {
-            address caller = vm.addr(uint256(bytes32Vals[i]));
-            vm.mockCall(
-                address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
-            );
-            vm.prank(caller);
             // only add unique non-existing ed25519_pub_key
             if (!announcements.isOffchainKeyBound(bytes32Vals[i])) {
-                announcements.bindKeys(bytes32Vals[i], bytes32Vals[i], bytes32Vals[i]);
+                address caller = vm.addr(uint256(bytes32Vals[i]));
+                // ensure the caller address is not used
+                assumeUnusedAddress(caller);
+                // mock no safe is associated with the caller node
+                vm.mockCall(
+                    address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
+                );
+                // mock mint balance for key binding fee
+                vm.prank(deployer);
+                hoprToken.mint(caller, DEFAULT_KEY_BINDING_FEE, '', '');
+
+                // prepare the key-binding payload, without announcing multiaddr
+                bytes memory keyBindPayload = abi.encode(
+                    caller, bytes32Vals[i], bytes32Vals[i], bytes32Vals[i], ''
+                );
+
+                vm.prank(caller);
+                hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
                 counter++;
             }
         }
