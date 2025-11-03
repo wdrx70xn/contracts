@@ -155,7 +155,7 @@ contract HoprNodeSafeRegistry is HoprNodeSafeRegistryEvents {
         );
 
         // Build the typed digest for signature verification
-        // / forge-lint: disable-next-line(asm-keccak256)
+        /// forge-lint: disable-next-line(asm-keccak256)
         bytes32 registerHash = keccak256(abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator, hashStruct));
 
         // Verify that the signature is from nodeChainKeyAddress

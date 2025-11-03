@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.30;
 
-import { Multicall } from "openzeppelin-contracts-5.4.0/utils/Multicall.sol";
 import { IERC1820Registry } from "openzeppelin-contracts-5.4.0/interfaces/IERC1820Registry.sol";
+import { UUPSUpgradeable } from "openzeppelin-contracts-upgradeable-5.4.0/proxy/utils/UUPSUpgradeable.sol";
+import { OwnableUpgradeable } from "openzeppelin-contracts-upgradeable-5.4.0/access/OwnableUpgradeable.sol";
+import { ERC1967Proxy } from "openzeppelin-contracts-5.4.0/proxy/ERC1967/ERC1967Proxy.sol";
 import { IERC777 } from "./static/openzeppelin-contracts/ERC777.sol";
 import { HoprMultiSig } from "./MultiSig.sol";
 import { HoprLedger } from "./Ledger.sol";
@@ -39,6 +41,15 @@ abstract contract HoprAnnouncementsEvents {
     event KeyBindingFeeUpdate(uint256 newFee);
 }
 
+contract HoprAnnouncementsProxy is ERC1967Proxy {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor(address _implementation, bytes memory data) ERC1967Proxy(_implementation, data) {}
+
+    function implementation() public view returns (address) {
+        return _implementation();
+    }
+}
+
 /**
  *    &&&&
  *    &&&&
@@ -55,6 +66,7 @@ abstract contract HoprAnnouncementsEvents {
  *                                          %%%%
  *
  * Publishes transport-layer information in the hopr network.
+ * The contract is UUPS upgradable and Ownable.
  *
  * Relay nodes MUST bind their off-chain keys to their on-chain identity
  * and announce a base multiaddress to be publicly reachable.
@@ -72,14 +84,9 @@ abstract contract HoprAnnouncementsEvents {
  *
  * The chain-key is used to retrieve the multiaddress base of a node.
  * By knowing the key id of a peer, a node can retrieve the off-chain keys and then the multiaddress base.
- *
- * TODO:
- * - Add owner controlled update of key binding fee
- * - Make this contract upgradeable
- * - Make the bind key idempotent (currently, re-binding the same off-chain key fails)
  */
 /// forge-lint:disable-next-item(mixed-case-variable)
-contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, HoprLedger(INDEX_SNAPSHOT_INTERVAL) {
+contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig, HoprAnnouncementsEvents, HoprLedger(INDEX_SNAPSHOT_INTERVAL) {
     using EnumerableKeyBindingSet for KeyBindingSet;
 
     error ZeroAddress(string reason);
@@ -94,8 +101,6 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
     IERC1820Registry internal constant _ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
     // required by ERC777 spec
     bytes32 public constant TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
-    // accepted token for key binding fees
-    IERC777 public immutable TOKEN;
     // pre-computed size of the encoded payload for tokensReceived hook with empty multiaddr
     uint256 public immutable ERC777_HOOK_BIND_KEY_MAYBE_ANNOUNCE_SIZE = abi.encode(address(0), bytes32(0), bytes32(0), bytes32(0), '').length;
 
@@ -103,28 +108,48 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
     KeyBindingSet internal _keyBindings;
     // announcements: chain-key => base-multiaddr
     uint256 public keyBindingFee = 10_000_000 gwei; // 0.01 wxHOPR tokens per key binding
+    // accepted token for key binding fees
+    /// forge-lint:disable-next-line(mixed-case-variable)
+    IERC777 public TOKEN;
     // chain-key (node address) to multiaddress base
     mapping(address => string) public multiaddrOf;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @dev Sets token address and NodeSafeRegistry address
      *
-     * @param _token address of the ERC777 token used for key binding fees
-     * @param _safeRegistry address of the HoprNodeSafeRegistry contract
-     * @param _keyBindingFee fee amount in token's smallest unit for key binding
+     * @param initParams abi encoded parameters:
+     *  - _token address of the ERC777 token used for key binding fees
+     *  - _safeRegistry address of the HoprNodeSafeRegistry contract
+     *  - _keyBindingFee fee amount in token's smallest unit for key binding
      */
-    constructor(address _token, HoprNodeSafeRegistry _safeRegistry, uint256 _keyBindingFee) {
+    function initialize(bytes memory initParams)
+        public
+        initializer
+    {
+        _initializeLedger(INDEX_SNAPSHOT_INTERVAL);
+        (address _token, address _safeRegistry, uint256 _keyBindingFee, address _owner) =
+            abi.decode(initParams, (address, address, uint256, address));
+
         if (_token == address(0)) {
             revert ZeroAddress({ reason: "_token must not be empty" });
         }
-        if (address(_safeRegistry) == address(0)) {
+        if (_safeRegistry == address(0)) {
             revert ZeroAddress({ reason: "_safeRegistry must not be empty" });
         }
+        if (_owner == address(0)) {
+            revert ZeroAddress({ reason: "_owner must not be empty" });
+        }
         TOKEN = IERC777(_token);
-        setNodeSafeRegistry(_safeRegistry);
+        setNodeSafeRegistry(HoprNodeSafeRegistry(_safeRegistry));
 
         _ERC1820_REGISTRY.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
         _updateKeyBindingFeeInternal(_keyBindingFee);
+        __Ownable_init_unchained(_owner);
     }
 
     /**
@@ -202,6 +227,13 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
 
         // burn the received tokens
         TOKEN.burn(amount, '');
+    }
+
+    /**
+     * @dev Authorizes contract upgrades. Only owner can upgrade the contract.
+     */
+    function updateKeyBindingFee(uint256 newFee) external onlyOwner {
+        _updateKeyBindingFeeInternal(newFee);
     }
 
     /**
@@ -394,4 +426,9 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
         indexEvent(abi.encodePacked(KeyBindingFeeUpdate.selector, newFee));
         emit KeyBindingFeeUpdate(newFee);
     }
+
+    /**
+     * @dev Override {_authorizeUpgrade} to only allow owner to upgrade the contract
+     */
+    function _authorizeUpgrade(address) internal override(UUPSUpgradeable) onlyOwner { }
 }

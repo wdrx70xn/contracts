@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import { Test, stdStorage, StdStorage } from "forge-std/Test.sol";
 import {
-    KeyBindingSet,
     KeyBindingWithSignature,
     KeyBindingWithSignatureTimestamp,
     EnumerableKeyBindingSetMock

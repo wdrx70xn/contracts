@@ -619,7 +619,7 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
         );
 
         // Generate a unique salt using the sender's address and the provided nonce
-        // / forge-lint: disable-next-line(asm-keccak256)
+        /// forge-lint: disable-next-line(asm-keccak256)
         bytes32 salt = keccak256(abi.encodePacked(caller, nonce));
 
         // Deploy module proxy (ERC1967Proxy) with CREATE2

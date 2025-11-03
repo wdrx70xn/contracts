@@ -4,12 +4,14 @@ pragma solidity >=0.6.0 <0.9.0;
 import { Test, Vm, stdStorage, StdStorage } from "forge-std/Test.sol";
 import { ERC1820RegistryFixtureTest } from "./utils/ERC1820Registry.sol";
 import {
+    HoprAnnouncementsProxy,
     HoprAnnouncements,
-    KeyBindingWithSignature,
+    HoprAnnouncementsEvents,
     KeyBindingWithSignatureTimestamp,
     KeyId,
-    HoprAnnouncementsEvents
+    OwnableUpgradeable
 } from "../src/Announcements.sol";
+import { INDEX_SNAPSHOT_INTERVAL } from "../src/Channels.sol";
 import { HoprNodeSafeRegistry } from "../src/node-stake/NodeSafeRegistry.sol";
 import { HoprToken } from "../src/static/HoprToken.sol";
 
@@ -27,6 +29,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
     using stdStorage for StdStorage;
 
     HoprNodeSafeRegistry safeRegistry;
+    HoprAnnouncements announcementsImplementation;
     HoprAnnouncements announcements;
     HoprToken hoprToken;
     address public deployer;
@@ -77,18 +80,118 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         vm.startPrank(deployer);
         safeRegistry = new HoprNodeSafeRegistry();
         hoprToken = new HoprToken();
-        announcements = new HoprAnnouncements(address(hoprToken), safeRegistry, DEFAULT_KEY_BINDING_FEE);
+        announcementsImplementation = new HoprAnnouncements();
+
+        HoprAnnouncementsProxy hoprAnnouncementsProxy = new HoprAnnouncementsProxy(
+            address(announcementsImplementation),
+            abi.encodeWithSignature(
+                "initialize(bytes)",
+                abi.encode(
+                    address(hoprToken),
+                    address(safeRegistry),
+                    DEFAULT_KEY_BINDING_FEE,
+                    deployer
+                )
+            )
+        );
+        announcements = HoprAnnouncements(address(hoprAnnouncementsProxy));
+
         // grant deployer minter role to mint tokens for testing
         hoprToken.grantRole(hoprToken.MINTER_ROLE(), deployer);
         vm.stopPrank();
     }
 
+    function test_DeployAnnouncements() public {
+        assertEq(announcements.keyBindingFee(), DEFAULT_KEY_BINDING_FEE);
+        assertEq(address(announcements.TOKEN()), address(hoprToken));
+        assertEq(announcements.owner(), deployer);
+        assertEq(HoprAnnouncementsProxy(payable(address(announcements))).implementation(), address(announcementsImplementation));
+        assertEq(announcements.SNAPSHOT_INTERVAL(), INDEX_SNAPSHOT_INTERVAL);
+        assertNotEq(announcements.ledgerDomainSeparator(), bytes32(0));
+    }
+
     function testRevert_ZeroAddressOnDeployment() public {
         vm.expectRevert(abi.encodeWithSelector(HoprAnnouncements.ZeroAddress.selector, "_token must not be empty"));
-        announcements = new HoprAnnouncements(address(0), safeRegistry, DEFAULT_KEY_BINDING_FEE);
+        HoprAnnouncementsProxy hoprAnnouncementsProxy1 = new HoprAnnouncementsProxy(
+            address(announcementsImplementation),
+            abi.encodeWithSignature(
+                "initialize(bytes)",
+                abi.encode(
+                    address(0),
+                    address(safeRegistry),
+                    DEFAULT_KEY_BINDING_FEE,
+                    deployer
+                )
+            )
+        );
 
         vm.expectRevert(abi.encodeWithSelector(HoprAnnouncements.ZeroAddress.selector, "_safeRegistry must not be empty"));
-        announcements = new HoprAnnouncements(address(hoprToken), HoprNodeSafeRegistry(address(0)), DEFAULT_KEY_BINDING_FEE);
+        HoprAnnouncementsProxy hoprAnnouncementsProxy2 = new HoprAnnouncementsProxy(
+            address(announcementsImplementation),
+            abi.encodeWithSignature(
+                "initialize(bytes)",
+                abi.encode(
+                    address(hoprToken),
+                    address(0),
+                    DEFAULT_KEY_BINDING_FEE,
+                    deployer
+                )
+            )
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(HoprAnnouncements.ZeroAddress.selector, "_owner must not be empty"));
+        HoprAnnouncementsProxy hoprAnnouncementsProxy3 = new HoprAnnouncementsProxy(
+            address(announcementsImplementation),
+            abi.encodeWithSignature(
+                "initialize(bytes)",
+                abi.encode(
+                    address(hoprToken),
+                    address(safeRegistry),
+                    DEFAULT_KEY_BINDING_FEE,
+                    address(0)
+                )
+            )
+        );
+    }
+
+    function test_UpgradeBindingFee() public {
+        uint256 newKeyBindingFee = 1 ether; // 1 wxHOPR tokens
+        assertEq(announcements.keyBindingFee(), DEFAULT_KEY_BINDING_FEE);
+
+        // cannot be upgrade by a non-owner
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
+                vm.addr(12345)
+            )
+        );
+        vm.prank(vm.addr(12345));
+        announcements.updateKeyBindingFee(newKeyBindingFee);
+
+        vm.prank(deployer);
+        announcements.updateKeyBindingFee(newKeyBindingFee);
+
+        assertEq(announcements.keyBindingFee(), newKeyBindingFee);
+    }
+
+    function test_UpgradeAnnouncementsImplementation() public {
+        HoprAnnouncements newImplementation = new HoprAnnouncements();
+        assertEq(HoprAnnouncementsProxy(payable(address(announcements))).implementation(), address(announcementsImplementation));
+
+        // cannot be upgrade by a non-owner
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
+                vm.addr(12345)
+            )
+        );
+        vm.prank(vm.addr(12345));
+        HoprAnnouncements(payable(address(announcements))).upgradeToAndCall(address(newImplementation), hex"");
+
+        vm.prank(deployer);
+        HoprAnnouncements(payable(address(announcements))).upgradeToAndCall(address(newImplementation), hex"");
+
+        assertEq(HoprAnnouncementsProxy(payable(address(announcements))).implementation(), address(newImplementation));
     }
 
     function testFuzz_KeyBinding(address callerNode) public

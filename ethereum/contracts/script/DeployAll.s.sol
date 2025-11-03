@@ -10,6 +10,7 @@ import { PermittableTokenFixtureTest } from "../test/utils/PermittableToken.sol"
 import { NetworkConfig } from "./utils/NetworkConfig.s.sol";
 import { BoostUtilsLib } from "./utils/BoostUtilsLib.sol";
 import { WinProb } from "../src/WinningProbabilityOracle.sol";
+import { HoprAnnouncements } from "../src/Announcements.sol";
 
 /**
  * @title Deploy all the required contracts in development, staging and production environment
@@ -93,7 +94,7 @@ contract DeployAllContractsScript is
         _deployHoprChannels();
 
         // 3.7. Announcements
-        _deployHoprAnnouncements();
+        _deployHoprAnnouncements(deployerAddress);
 
         // 3.8 HoprNodeStakeFactory
         _deployHoprNodeStakeFactory(deployerAddress);
@@ -251,18 +252,29 @@ contract DeployAllContractsScript is
     /**
      * @dev deploy Announcments smart contract and register NodeSafeRegistry
      */
-    function _deployHoprAnnouncements() internal {
+    function _deployHoprAnnouncements(address deployerAddress) internal {
         if (
             currentEnvironmentType == EnvironmentType.LOCAL
                 || !isValidAddress(currentNetworkDetail.addresses.announcements)
         ) {
             // deploy HoprAnnouncements contract and register with current NodeSafeRegistry
+            address announcementImplementation = deployCode(
+                "Announcements.sol:HoprAnnouncements"
+            );
+
             currentNetworkDetail.addresses.announcements = deployCode(
-                "Announcements.sol:HoprAnnouncements",
+                "Announcements.sol:HoprAnnouncementsProxy",
                 abi.encode(
-                    currentNetworkDetail.addresses.tokenContractAddress,
-                    currentNetworkDetail.addresses.nodeSafeRegistryAddress,
-                    KEY_BINDING_FEE
+                    announcementImplementation,
+                    abi.encodeWithSignature(
+                        "initialize(bytes)",
+                        abi.encode(
+                            currentNetworkDetail.addresses.tokenContractAddress,
+                            currentNetworkDetail.addresses.nodeSafeRegistryAddress,
+                            KEY_BINDING_FEE,
+                            deployerAddress
+                        )
+                    )
                 )
             );
         }

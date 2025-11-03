@@ -52,7 +52,7 @@ contract NetworkConfig is Script {
     address public constant PRODUCT_MULTISIG_ADDRESS = 0xD720099cBC14e669695EaE0708E6Ca614B387921; // only used in
     // "stake_hub_test" network
     // CORE's deployer is the caller, therefore not in this array
-    // / forge-lint:disable-next-item(mixed-case-variable)
+    /// forge-lint:disable-next-item(mixed-case-variable)
     address[3] public PRODUCT_TEAM_MANAGER_ADDRESSES = [
         0x01BFbCB6A2924b083969ce6237AdBbF3BFa7De13, // RPCh staging
         0xDCcC4a8ee2BF3CaF5a4AB1cDBa1ee7cc04E324Dd, // RPCh production
