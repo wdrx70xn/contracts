@@ -119,11 +119,11 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         vm.clearMockedCalls();
     }
 
-    function testFuzz_Announcements(address caller) public {
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
-        );
-
+    function testFuzz_Announcements(address caller)
+        public
+        callerNodeIsUnused(caller)
+        mockNodeToSafe(caller, address(0))
+    {
         vm.expectEmit(true, false, false, false, address(announcements));
         emit AddressAnnouncement(caller, MULTIADDRESS);
 
@@ -133,11 +133,11 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         vm.clearMockedCalls();
     }
 
-    function testFuzz_AddressRevocation(address caller) public {
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
-        );
-
+    function testFuzz_AddressRevocation(address caller)
+        public
+        callerNodeIsUnused(caller)
+        mockNodeToSafe(caller, address(0))
+    {
         vm.expectEmit(true, false, false, false, address(announcements));
         emit RevokeAnnouncement(caller);
 
@@ -154,10 +154,10 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
     {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         // prepare the key-binding payload, with announcing multiaddr
         bytes memory keyBindPayload = abi.encode(
@@ -211,10 +211,10 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         mockMintBalance(callerSafe, DEFAULT_KEY_BINDING_FEE)
     {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         // prepare the key-binding payload, with announcing multiaddr
         bytes memory keyBindPayload = abi.encode(
@@ -261,32 +261,99 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         vm.clearMockedCalls();
     }
 
-    function testFuzz_AnnounceSafe(address nodeAddress) public {
-        address safeAddress = vm.addr(888);
-        vm.assume(nodeAddress != address(0));
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", nodeAddress), abi.encode(safeAddress)
+    function testFuzz_BindKeyAndAnnouncementFromNodeAgain(address callerNode)
+        public 
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, address(0))
+        mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE * 2)
+    {
+        // First time binding
+        bytes memory keyBindPayload = abi.encode(
+            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS
         );
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(nodeAddress, MULTIADDRESS);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
-        vm.prank(safeAddress);
-        announcements.announceSafe(nodeAddress, MULTIADDRESS);
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+
+        vm.prank(callerNode);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+
+        uint256 balanceAfterFirstBinding = hoprToken.balanceOf(callerNode);
+        uint256 totalSupplyAfterFirstBinding = hoprToken.totalSupply();
+
+        // Second time key binding is idempotent, no KeyBinding nor announcement event is expected
+        vm.recordLogs();
+        vm.prank(callerNode);
+        hoprToken.send(address(announcements), 0, keyBindPayload);
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        // there is no AddressAnnouncement nor KeyBinding event in the logs
+        for (uint256 i; i < logs.length; ++i) {
+            assertNotEq(logs[i].topics[0], keccak256("AddressAnnouncement(address,string)"));
+            assertNotEq(logs[i].topics[0], keccak256("KeyBindingFeeUpdate(uint256)"));
+        }
+    
+        // tokens are burned
+        assertEq(hoprToken.balanceOf(callerNode), balanceAfterFirstBinding);
+        assertEq(hoprToken.totalSupply(), totalSupplyAfterFirstBinding);
+        // multiaddr announced
+        string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
+        assertEq(registeredMultiAddress, MULTIADDRESS);
 
         vm.clearMockedCalls();
     }
 
-    function testFuzz_RevokeSafe(address nodeAddress) public {
-        address safeAddress = vm.addr(888);
-        vm.assume(nodeAddress != address(0));
-        vm.mockCall(
-            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", nodeAddress), abi.encode(safeAddress)
-        );
+    function testFuzz_AnnounceSafe(address callerNode)
+        public
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, callerSafe)
+    {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit RevokeAnnouncement(nodeAddress);
-        vm.prank(safeAddress);
-        announcements.revokeSafe(nodeAddress);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+
+        vm.prank(callerSafe);
+        announcements.announceSafe(callerNode, MULTIADDRESS);
+
+        vm.clearMockedCalls();
+    }
+
+    function testFuzz_AnnounceSafeAgain(address callerNode)
+        public
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, callerSafe)
+    {
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+
+        vm.prank(callerSafe);
+        announcements.announceSafe(callerNode, MULTIADDRESS);
+
+        // announcing again with the same multiaddr is a no-op
+        vm.recordLogs();
+        vm.prank(callerSafe);
+        announcements.announceSafe(callerNode, MULTIADDRESS);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        assertEq(logs.length, 0);
+        // there is no AddressAnnouncement event in the logs
+        for (uint256 i; i < logs.length; ++i) {
+            assertNotEq(logs[i].topics[0], keccak256("AddressAnnouncement(address,string)"));
+        }
+
+        vm.clearMockedCalls();
+    }
+
+    function testFuzz_RevokeSafe(address callerNode)
+    public
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, callerSafe)
+    {
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit RevokeAnnouncement(callerNode);
+        vm.prank(callerSafe);
+        announcements.revokeSafe(callerNode);
         vm.clearMockedCalls();
     }
 

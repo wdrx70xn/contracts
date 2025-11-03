@@ -163,11 +163,6 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
         if (msg.sender != address(TOKEN)) {
             revert WrongToken();
         }
-        // check the fee is paid
-        if (amount != keyBindingFee) {
-            revert InvalidKeyBindingFeeAmount();
-        }
-
         // only accept tokens sent to this contract
         if (to != address(this)) {
             revert InvalidTokenRecipient();
@@ -193,11 +188,18 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
         if ((expectedSafe == address(0) && from != nodeAddress) || (expectedSafe != address(0) && from != expectedSafe)) {
             revert InvalidTokenSender();
         }
-        // perform key binding and optional announcement
-        _bindKeysInternal(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
+
+        // perform optional announcement
         if (bytes(baseMultiaddr).length != 0) {
             _announceInternal(nodeAddress, baseMultiaddr);
         }
+        // perform idempotent key binding
+        (bool isNewInsertion, ) = _bindKeysInternal(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
+        // check that the sent amount is equal to the key binding fee
+        if (isNewInsertion && amount != keyBindingFee || (!isNewInsertion && amount != 0)) {
+            revert InvalidKeyBindingFeeAmount();
+        }
+
         // burn the received tokens
         TOKEN.burn(amount, '');
     }
@@ -323,9 +325,10 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
      * The key-id of key binding is allocated automatically and returned by the function.
      * The key id is calculated as the current number of key bindings + 1.
      *
-     * @dev The verification of the ed25519 EdDSA signature happens off-chain.
+     * The Key-Binding process is idempotent, i.e., re-binding the same off-chain key to the same
+     * on-chain identity MUST NOT fail, but return the existing key id.
      *
-     * @dev Key binding and address announcements can happen in one call using `multicall`.
+     * @dev The verification of the ed25519 EdDSA signature happens off-chain.
      *
      * @param ed25519_sig_0 first component of the EdDSA signature
      * @param ed25519_sig_1 second component of the EdDSA signature
@@ -338,11 +341,20 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
         bytes32 ed25519_pub_key
     )
         internal
-        returns (uint256 keyIdIndex)
+        returns (bool isNewInsertion, uint256 keyIdIndex)
     {
+
+        (bool containsKey, uint256 position, ) = _keyBindings.tryGet(ed25519_pub_key);
+        if (containsKey) {
+            // key already bound, return existing key id
+            return (false, position);
+        }
+
+        // Otherwise, add new key binding
         keyIdIndex = _keyBindings.add(KeyBindingWithSignature(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
         indexEvent(abi.encodePacked(KeyBinding.selector, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
         emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress);
+        return (true, keyIdIndex);
     }
 
     /**
@@ -355,6 +367,10 @@ contract HoprAnnouncements is Multicall, HoprMultiSig, HoprAnnouncementsEvents, 
     function _announceInternal(address selfAddress, string memory baseMultiaddr) internal {
         if (bytes(baseMultiaddr).length == 0) {
             revert EmptyMultiaddr();
+        }
+        if (bytes(multiaddrOf[selfAddress]).length != 0 && keccak256(bytes(multiaddrOf[selfAddress])) == keccak256(bytes(baseMultiaddr))) {
+            // no-op if the same multiaddr is announced again
+            return;
         }
         multiaddrOf[selfAddress] = baseMultiaddr;
         indexEvent(abi.encodePacked(AddressAnnouncement.selector, selfAddress, baseMultiaddr));
