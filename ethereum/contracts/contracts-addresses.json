@@ -17,7 +17,7 @@
     },
     "rotsee": {
       "addresses": {
-        "announcements": "0xe45A8DBDADafd86AB7e2368b4749864083331cFC",
+        "announcements": "0x45b000742a693AB00fA4839a086dfB6155a15D3C",
         "channels": "0x9680F21d4583ad27F2e6bc3005EDF120FFf057B7",
         "module_implementation": "0x79C3bF06E96A9373765284aFb0a35e9529E2B3F2",
         "node_safe_migration": "0xe9670B5D87c87111C9050D915971B73b9f5021a9",
