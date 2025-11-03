@@ -57,9 +57,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
 
     modifier mockNodeToSafe(address nodeAddress, address safeAddress) {
         vm.mockCall(
-            address(safeRegistry),
-            abi.encodeWithSignature("nodeToSafe(address)", nodeAddress),
-            abi.encode(safeAddress)
+            address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", nodeAddress), abi.encode(safeAddress)
         );
         _;
     }
@@ -67,15 +65,15 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
     modifier mockMintBalance(address to, uint256 amount) {
         // manipulate the caller's token balance
         vm.prank(deployer);
-        hoprToken.mint(to, amount, '', '');
+        hoprToken.mint(to, amount, "", "");
         _;
     }
 
     function setUp() public override {
         super.setUp();
 
-        deployer = vm.addr(98765);
-        callerSafe = vm.addr(56789);
+        deployer = vm.addr(98_765);
+        callerSafe = vm.addr(56_789);
 
         vm.startPrank(deployer);
         safeRegistry = new HoprNodeSafeRegistry();
@@ -86,12 +84,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
             address(announcementsImplementation),
             abi.encodeWithSignature(
                 "initialize(bytes)",
-                abi.encode(
-                    address(hoprToken),
-                    address(safeRegistry),
-                    DEFAULT_KEY_BINDING_FEE,
-                    deployer
-                )
+                abi.encode(address(hoprToken), address(safeRegistry), DEFAULT_KEY_BINDING_FEE, deployer)
             )
         );
         announcements = HoprAnnouncements(address(hoprAnnouncementsProxy));
@@ -105,7 +98,10 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(announcements.keyBindingFee(), DEFAULT_KEY_BINDING_FEE);
         assertEq(address(announcements.TOKEN()), address(hoprToken));
         assertEq(announcements.owner(), deployer);
-        assertEq(HoprAnnouncementsProxy(payable(address(announcements))).implementation(), address(announcementsImplementation));
+        assertEq(
+            HoprAnnouncementsProxy(payable(address(announcements))).implementation(),
+            address(announcementsImplementation)
+        );
         assertEq(announcements.SNAPSHOT_INTERVAL(), INDEX_SNAPSHOT_INTERVAL);
         assertNotEq(announcements.ledgerDomainSeparator(), bytes32(0));
     }
@@ -115,27 +111,17 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         HoprAnnouncementsProxy hoprAnnouncementsProxy1 = new HoprAnnouncementsProxy(
             address(announcementsImplementation),
             abi.encodeWithSignature(
-                "initialize(bytes)",
-                abi.encode(
-                    address(0),
-                    address(safeRegistry),
-                    DEFAULT_KEY_BINDING_FEE,
-                    deployer
-                )
+                "initialize(bytes)", abi.encode(address(0), address(safeRegistry), DEFAULT_KEY_BINDING_FEE, deployer)
             )
         );
 
-        vm.expectRevert(abi.encodeWithSelector(HoprAnnouncements.ZeroAddress.selector, "_safeRegistry must not be empty"));
+        vm.expectRevert(
+            abi.encodeWithSelector(HoprAnnouncements.ZeroAddress.selector, "_safeRegistry must not be empty")
+        );
         HoprAnnouncementsProxy hoprAnnouncementsProxy2 = new HoprAnnouncementsProxy(
             address(announcementsImplementation),
             abi.encodeWithSignature(
-                "initialize(bytes)",
-                abi.encode(
-                    address(hoprToken),
-                    address(0),
-                    DEFAULT_KEY_BINDING_FEE,
-                    deployer
-                )
+                "initialize(bytes)", abi.encode(address(hoprToken), address(0), DEFAULT_KEY_BINDING_FEE, deployer)
             )
         );
 
@@ -144,12 +130,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
             address(announcementsImplementation),
             abi.encodeWithSignature(
                 "initialize(bytes)",
-                abi.encode(
-                    address(hoprToken),
-                    address(safeRegistry),
-                    DEFAULT_KEY_BINDING_FEE,
-                    address(0)
-                )
+                abi.encode(address(hoprToken), address(safeRegistry), DEFAULT_KEY_BINDING_FEE, address(0))
             )
         );
     }
@@ -159,13 +140,8 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(announcements.keyBindingFee(), DEFAULT_KEY_BINDING_FEE);
 
         // cannot be upgrade by a non-owner
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
-                vm.addr(12345)
-            )
-        );
-        vm.prank(vm.addr(12345));
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, vm.addr(12_345)));
+        vm.prank(vm.addr(12_345));
         announcements.updateKeyBindingFee(newKeyBindingFee);
 
         vm.prank(deployer);
@@ -176,16 +152,14 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
 
     function test_UpgradeAnnouncementsImplementation() public {
         HoprAnnouncements newImplementation = new HoprAnnouncements();
-        assertEq(HoprAnnouncementsProxy(payable(address(announcements))).implementation(), address(announcementsImplementation));
+        assertEq(
+            HoprAnnouncementsProxy(payable(address(announcements))).implementation(),
+            address(announcementsImplementation)
+        );
 
         // cannot be upgrade by a non-owner
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                OwnableUpgradeable.OwnableUnauthorizedAccount.selector,
-                vm.addr(12345)
-            )
-        );
-        vm.prank(vm.addr(12345));
+        vm.expectRevert(abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, vm.addr(12_345)));
+        vm.prank(vm.addr(12_345));
         HoprAnnouncements(payable(address(announcements))).upgradeToAndCall(address(newImplementation), hex"");
 
         vm.prank(deployer);
@@ -194,7 +168,8 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(HoprAnnouncementsProxy(payable(address(announcements))).implementation(), address(newImplementation));
     }
 
-    function testFuzz_KeyBinding(address callerNode) public
+    function testFuzz_KeyBinding(address callerNode)
+        public
         callerNodeIsUnused(callerNode)
         mockNodeToSafe(callerNode, address(0))
         mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
@@ -203,9 +178,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(hoprToken.totalSupply(), DEFAULT_KEY_BINDING_FEE);
 
         // prepare the key-binding payload, without announcing multiaddr
-        bytes memory keyBindPayload = abi.encode(
-            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, ''
-        );
+        bytes memory keyBindPayload = abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, "");
 
         vm.prank(callerNode);
         // expect KeyBinding event emitted
@@ -217,7 +190,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(hoprToken.totalSupply(), 0);
         // no multiaddr announced
         string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
-        assertEq(registeredMultiAddress, '');
+        assertEq(registeredMultiAddress, "");
 
         vm.clearMockedCalls();
     }
@@ -251,7 +224,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
     }
 
     function testFuzz_BindKeyAndAnnouncementFromNodeForTheFirstTime(address callerNode)
-    public 
+        public
         callerNodeIsUnused(callerNode)
         mockNodeToSafe(callerNode, address(0))
         mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
@@ -263,9 +236,8 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         // prepare the key-binding payload, with announcing multiaddr
-        bytes memory keyBindPayload = abi.encode(
-            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS
-        );
+        bytes memory keyBindPayload =
+            abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS);
 
         vm.prank(callerNode);
         hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
@@ -290,9 +262,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         // prepare the key-binding payload, without announcing multiaddr
-        bytes memory keyBindPayload = abi.encode(
-            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, ''
-        );
+        bytes memory keyBindPayload = abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, "");
 
         vm.prank(callerNode);
         hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
@@ -302,13 +272,13 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(hoprToken.totalSupply(), 0);
         // no multiaddr announced
         string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
-        assertEq(registeredMultiAddress, '');
+        assertEq(registeredMultiAddress, "");
 
         vm.clearMockedCalls();
     }
 
     function testFuzz_BindKeyAndAnnouncementFromSafeForTheFirstTime(address callerNode)
-        public 
+        public
         callerNodeIsUnused(callerNode)
         mockNodeToSafe(callerNode, callerSafe)
         mockMintBalance(callerSafe, DEFAULT_KEY_BINDING_FEE)
@@ -320,9 +290,8 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         // prepare the key-binding payload, with announcing multiaddr
-        bytes memory keyBindPayload = abi.encode(
-            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS
-        );
+        bytes memory keyBindPayload =
+            abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS);
 
         vm.prank(callerSafe);
         hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
@@ -338,7 +307,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
     }
 
     function testFuzz_BindKeyWithoutAnnouncementFromSafeForTheFirstTime(address callerNode)
-        public 
+        public
         callerNodeIsUnused(callerNode)
         mockNodeToSafe(callerNode, callerSafe)
         mockMintBalance(callerSafe, DEFAULT_KEY_BINDING_FEE)
@@ -347,9 +316,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
 
         // prepare the key-binding payload, with announcing multiaddr
-        bytes memory keyBindPayload = abi.encode(
-            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, ''
-        );
+        bytes memory keyBindPayload = abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, "");
 
         vm.prank(callerSafe);
         hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
@@ -359,21 +326,20 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(hoprToken.totalSupply(), 0);
         // no multiaddr announced
         string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
-        assertEq(registeredMultiAddress, '');
+        assertEq(registeredMultiAddress, "");
 
         vm.clearMockedCalls();
     }
 
     function testFuzz_BindKeyAndAnnouncementFromNodeAgain(address callerNode)
-        public 
+        public
         callerNodeIsUnused(callerNode)
         mockNodeToSafe(callerNode, address(0))
         mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE * 2)
     {
         // First time binding
-        bytes memory keyBindPayload = abi.encode(
-            callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS
-        );
+        bytes memory keyBindPayload =
+            abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS);
 
         vm.expectEmit(true, false, false, false, address(announcements));
         emit AddressAnnouncement(callerNode, MULTIADDRESS);
@@ -398,7 +364,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
             assertNotEq(logs[i].topics[0], keccak256("AddressAnnouncement(address,string)"));
             assertNotEq(logs[i].topics[0], keccak256("KeyBindingFeeUpdate(uint256)"));
         }
-    
+
         // tokens are burned
         assertEq(hoprToken.balanceOf(callerNode), balanceAfterFirstBinding);
         assertEq(hoprToken.totalSupply(), totalSupplyAfterFirstBinding);
@@ -449,7 +415,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
     }
 
     function testFuzz_RevokeSafe(address callerNode)
-    public
+        public
         callerNodeIsUnused(callerNode)
         mockNodeToSafe(callerNode, callerSafe)
     {
@@ -462,7 +428,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
 
     function testRevert_EmptyMultiAddr() public {
         vm.expectRevert(HoprAnnouncements.EmptyMultiaddr.selector);
-        announcements.announce('');
+        announcements.announce("");
     }
 
     function testFuzz_GetKeyBinding(bytes32[] memory bytes32Vals) public respectCurveRange(bytes32Vals) {
@@ -474,7 +440,8 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         assertEq(results.length, announcements.getKeyBindingCount());
 
         for (uint256 i = 0; i < createdCount; i++) {
-            KeyBindingWithSignatureTimestamp memory result_i = announcements.getKeyBindingWithKeyId(KeyId.wrap(uint32(i)));
+            KeyBindingWithSignatureTimestamp memory result_i =
+                announcements.getKeyBindingWithKeyId(KeyId.wrap(uint32(i)));
             assertTrue(announcements.isOffchainKeyBound(result_i.ed25519_pub_key));
 
             (bool success, KeyId index, KeyBindingWithSignatureTimestamp memory tryBinding_i) =
@@ -516,16 +483,16 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
                 assumeUnusedAddress(caller);
                 // mock no safe is associated with the caller node
                 vm.mockCall(
-                    address(safeRegistry), abi.encodeWithSignature("nodeToSafe(address)", caller), abi.encode(address(0))
+                    address(safeRegistry),
+                    abi.encodeWithSignature("nodeToSafe(address)", caller),
+                    abi.encode(address(0))
                 );
                 // mock mint balance for key binding fee
                 vm.prank(deployer);
-                hoprToken.mint(caller, DEFAULT_KEY_BINDING_FEE, '', '');
+                hoprToken.mint(caller, DEFAULT_KEY_BINDING_FEE, "", "");
 
                 // prepare the key-binding payload, without announcing multiaddr
-                bytes memory keyBindPayload = abi.encode(
-                    caller, bytes32Vals[i], bytes32Vals[i], bytes32Vals[i], ''
-                );
+                bytes memory keyBindPayload = abi.encode(caller, bytes32Vals[i], bytes32Vals[i], bytes32Vals[i], "");
 
                 vm.prank(caller);
                 hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
@@ -541,6 +508,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         returns (bool)
     {
         return (a.ed25519_sig_0 == b.ed25519_sig_0 && a.ed25519_sig_1 == b.ed25519_sig_1
-                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key && a.boundTimestamp == b.boundTimestamp);
+                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key
+                && a.boundTimestamp == b.boundTimestamp);
     }
 }

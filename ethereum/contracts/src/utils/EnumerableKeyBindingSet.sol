@@ -30,7 +30,7 @@ struct KeyBindingSet {
     KeyBindingWithSignatureTimestamp[] _values;
     // Position is the index of the value in the `values` array plus 1
     // Position 0 means a value is not in the set.
-    // The key is the ed25519_pub_key of the KeyBindingWithSignatureTimestamp. 
+    // The key is the ed25519_pub_key of the KeyBindingWithSignatureTimestamp.
     // Each ed25519_pub_key can only be associated with maximum one chain_key.
     mapping(bytes32 => uint256) _positions;
 }
@@ -54,7 +54,7 @@ library EnumerableKeyBindingSet {
      * The timestamp of binding will be set to block.timestamp.
      * The EnumerableKeyBindingSet then stores KeyBindingWithSignatureTimestamp internally.
      *
-     * Returns the key id in uint256 type if the value was added to the set, 
+     * Returns the key id in uint256 type if the value was added to the set,
      * that is if it was not already present. Key id starts from 0 to MAX_KEY_ID.
      */
     function add(KeyBindingSet storage set, KeyBindingWithSignature memory value) internal returns (uint256) {
@@ -69,13 +69,16 @@ library EnumerableKeyBindingSet {
         }
 
         // add value to the set
-        set._values.push(KeyBindingWithSignatureTimestamp({
-            ed25519_sig_0: value.ed25519_sig_0,
-            ed25519_sig_1: value.ed25519_sig_1,
-            ed25519_pub_key: value.ed25519_pub_key,
-            chain_key: value.chain_key,
-            boundTimestamp: block.timestamp
-        }));
+        set._values
+            .push(
+                KeyBindingWithSignatureTimestamp({
+                    ed25519_sig_0: value.ed25519_sig_0,
+                    ed25519_sig_1: value.ed25519_sig_1,
+                    ed25519_pub_key: value.ed25519_pub_key,
+                    chain_key: value.chain_key,
+                    boundTimestamp: block.timestamp
+                })
+            );
         // The value is stored at length-1, but we add 1 to all indexes
         // and use 0 as a sentinel value
         set._positions[value.ed25519_pub_key] = set._values.length;
@@ -111,7 +114,11 @@ library EnumerableKeyBindingSet {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(KeyBindingSet storage set, uint256 index) internal view returns (KeyBindingWithSignatureTimestamp memory) {
+    function at(KeyBindingSet storage set, uint256 index)
+        internal
+        view
+        returns (KeyBindingWithSignatureTimestamp memory)
+    {
         return set._values[index];
     }
 

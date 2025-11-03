@@ -43,7 +43,7 @@ abstract contract HoprAnnouncementsEvents {
 
 contract HoprAnnouncementsProxy is ERC1967Proxy {
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address _implementation, bytes memory data) ERC1967Proxy(_implementation, data) {}
+    constructor(address _implementation, bytes memory data) ERC1967Proxy(_implementation, data) { }
 
     function implementation() public view returns (address) {
         return _implementation();
@@ -86,7 +86,13 @@ contract HoprAnnouncementsProxy is ERC1967Proxy {
  * By knowing the key id of a peer, a node can retrieve the off-chain keys and then the multiaddress base.
  */
 /// forge-lint:disable-next-item(mixed-case-variable)
-contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig, HoprAnnouncementsEvents, HoprLedger(INDEX_SNAPSHOT_INTERVAL) {
+contract HoprAnnouncements is
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    HoprMultiSig,
+    HoprAnnouncementsEvents,
+    HoprLedger(INDEX_SNAPSHOT_INTERVAL)
+{
     using EnumerableKeyBindingSet for KeyBindingSet;
 
     error ZeroAddress(string reason);
@@ -102,7 +108,8 @@ contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig,
     // required by ERC777 spec
     bytes32 public constant TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
     // pre-computed size of the encoded payload for tokensReceived hook with empty multiaddr
-    uint256 public immutable ERC777_HOOK_BIND_KEY_MAYBE_ANNOUNCE_SIZE = abi.encode(address(0), bytes32(0), bytes32(0), bytes32(0), '').length;
+    uint256 public immutable ERC777_HOOK_BIND_KEY_MAYBE_ANNOUNCE_SIZE =
+        abi.encode(address(0), bytes32(0), bytes32(0), bytes32(0), "").length;
 
     // key bindings
     KeyBindingSet internal _keyBindings;
@@ -127,10 +134,7 @@ contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig,
      *  - _safeRegistry address of the HoprNodeSafeRegistry contract
      *  - _keyBindingFee fee amount in token's smallest unit for key binding
      */
-    function initialize(bytes memory initParams)
-        public
-        initializer
-    {
+    function initialize(bytes memory initParams) public initializer {
         _initializeLedger(INDEX_SNAPSHOT_INTERVAL);
         (address _token, address _safeRegistry, uint256 _keyBindingFee, address _owner) =
             abi.decode(initParams, (address, address, uint256, address));
@@ -210,7 +214,8 @@ contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig,
         // 1) node without Safe pays for key binding: from == nodeAddress and expectedSafe == address(0)
         // 2) node with Safe pays for key binding: from == expectedSafe && expectedSafe != address(0)
         address expectedSafe = registry.nodeToSafe(nodeAddress);
-        if ((expectedSafe == address(0) && from != nodeAddress) || (expectedSafe != address(0) && from != expectedSafe)) {
+        if ((expectedSafe == address(0) && from != nodeAddress) || (expectedSafe != address(0) && from != expectedSafe))
+        {
             revert InvalidTokenSender();
         }
 
@@ -219,14 +224,14 @@ contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig,
             _announceInternal(nodeAddress, baseMultiaddr);
         }
         // perform idempotent key binding
-        (bool isNewInsertion, ) = _bindKeysInternal(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
+        (bool isNewInsertion,) = _bindKeysInternal(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
         // check that the sent amount is equal to the key binding fee
         if (isNewInsertion && amount != keyBindingFee || (!isNewInsertion && amount != 0)) {
             revert InvalidKeyBindingFeeAmount();
         }
 
         // burn the received tokens
-        TOKEN.burn(amount, '');
+        TOKEN.burn(amount, "");
     }
 
     /**
@@ -376,14 +381,16 @@ contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig,
         returns (bool isNewInsertion, uint256 keyIdIndex)
     {
 
-        (bool containsKey, uint256 position, ) = _keyBindings.tryGet(ed25519_pub_key);
+
+        (bool containsKey, uint256 position,) = _keyBindings.tryGet(ed25519_pub_key);
         if (containsKey) {
             // key already bound, return existing key id
             return (false, position);
         }
 
         // Otherwise, add new key binding
-        keyIdIndex = _keyBindings.add(KeyBindingWithSignature(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
+        keyIdIndex =
+            _keyBindings.add(KeyBindingWithSignature(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
         indexEvent(abi.encodePacked(KeyBinding.selector, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
         emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress);
         return (true, keyIdIndex);
@@ -400,7 +407,10 @@ contract HoprAnnouncements is UUPSUpgradeable, OwnableUpgradeable, HoprMultiSig,
         if (bytes(baseMultiaddr).length == 0) {
             revert EmptyMultiaddr();
         }
-        if (bytes(multiaddrOf[selfAddress]).length != 0 && keccak256(bytes(multiaddrOf[selfAddress])) == keccak256(bytes(baseMultiaddr))) {
+        if (
+            bytes(multiaddrOf[selfAddress]).length != 0
+                && keccak256(bytes(multiaddrOf[selfAddress])) == keccak256(bytes(baseMultiaddr))
+        ) {
             // no-op if the same multiaddr is announced again
             return;
         }

@@ -27,7 +27,7 @@ contract DeployAllContractsScript is
 {
     using BoostUtilsLib for address;
 
-    uint256 public constant KEY_BINDING_FEE = 10_000_000 gwei;  // 0.01 HOPR in gwei unit
+    uint256 public constant KEY_BINDING_FEE = 10_000_000 gwei; // 0.01 HOPR in gwei unit
 
     bool internal isHoprChannelsDeployed;
     bool internal isHoprNetworkRegistryDeployed;
@@ -258,9 +258,7 @@ contract DeployAllContractsScript is
                 || !isValidAddress(currentNetworkDetail.addresses.announcements)
         ) {
             // deploy HoprAnnouncements contract and register with current NodeSafeRegistry
-            address announcementImplementation = deployCode(
-                "Announcements.sol:HoprAnnouncements"
-            );
+            address announcementImplementation = deployCode("Announcements.sol:HoprAnnouncements");
 
             currentNetworkDetail.addresses.announcements = deployCode(
                 "Announcements.sol:HoprAnnouncementsProxy",

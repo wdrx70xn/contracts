@@ -81,14 +81,36 @@ contract EnumerableKeyBindingSetTest is Test {
         KeyBindingWithSignatureTimestamp[] memory firstValues = enumerableKeyBindingSetMock.values();
         assertEq(firstValues.length, 1);
         assertEq(enumerableKeyBindingSetMock.length(), 1);
-        assertTrue(_compareKeyBinding(firstValues[0], KeyBindingWithSignatureTimestamp(keyBinding.ed25519_sig_0, keyBinding.ed25519_sig_1, keyBinding.ed25519_pub_key, keyBinding.chain_key, block.timestamp)));
+        assertTrue(
+            _compareKeyBinding(
+                firstValues[0],
+                KeyBindingWithSignatureTimestamp(
+                    keyBinding.ed25519_sig_0,
+                    keyBinding.ed25519_sig_1,
+                    keyBinding.ed25519_pub_key,
+                    keyBinding.chain_key,
+                    block.timestamp
+                )
+            )
+        );
 
         // check adding another keyBinding
         assertEq(enumerableKeyBindingSetMock.add(keyBinding2), 1);
         KeyBindingWithSignatureTimestamp[] memory secondValues = enumerableKeyBindingSetMock.values();
         assertEq(secondValues.length, 2);
         assertEq(enumerableKeyBindingSetMock.length(), 2);
-        assertTrue(_compareKeyBinding(secondValues[1], KeyBindingWithSignatureTimestamp(keyBinding2.ed25519_sig_0, keyBinding2.ed25519_sig_1, keyBinding2.ed25519_pub_key, keyBinding2.chain_key, block.timestamp)));
+        assertTrue(
+            _compareKeyBinding(
+                secondValues[1],
+                KeyBindingWithSignatureTimestamp(
+                    keyBinding2.ed25519_sig_0,
+                    keyBinding2.ed25519_sig_1,
+                    keyBinding2.ed25519_pub_key,
+                    keyBinding2.chain_key,
+                    block.timestamp
+                )
+            )
+        );
         // check set indeed contains the targetAddress
         assertTrue(enumerableKeyBindingSetMock.contains(pubkey1));
         assertTrue(enumerableKeyBindingSetMock.contains(pubkey2));
@@ -179,7 +201,9 @@ contract EnumerableKeyBindingSetTest is Test {
         assertFalse(tryResult);
         assertEq(index, 0);
         assertTrue(
-            _compareKeyBinding(tryBinding, KeyBindingWithSignatureTimestamp(bytes32(0), bytes32(0), bytes32(0), address(0), 0))
+            _compareKeyBinding(
+                tryBinding, KeyBindingWithSignatureTimestamp(bytes32(0), bytes32(0), bytes32(0), address(0), 0)
+            )
         );
     }
 
@@ -244,6 +268,7 @@ contract EnumerableKeyBindingSetTest is Test {
         returns (bool)
     {
         return (a.ed25519_sig_0 == b.ed25519_sig_0 && a.ed25519_sig_1 == b.ed25519_sig_1
-                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key && a.boundTimestamp == b.boundTimestamp);
+                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key
+                && a.boundTimestamp == b.boundTimestamp);
     }
 }

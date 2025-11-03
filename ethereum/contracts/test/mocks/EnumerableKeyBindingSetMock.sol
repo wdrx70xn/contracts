@@ -40,7 +40,11 @@ contract EnumerableKeyBindingSetMock {
     }
 
     /// forge-lint:disable-next-line(mixed-case-variable)
-    function tryGet(bytes32 ed25519_pub_key) public view returns (bool, uint256, KeyBindingWithSignatureTimestamp memory) {
+    function tryGet(bytes32 ed25519_pub_key)
+        public
+        view
+        returns (bool, uint256, KeyBindingWithSignatureTimestamp memory)
+    {
         return EnumerableKeyBindingSet.tryGet(keyBindingSet, ed25519_pub_key);
     }
 
