@@ -226,7 +226,7 @@ contract HoprAnnouncements is
         // perform idempotent key binding
         (bool isNewInsertion,) = _bindKeysInternal(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
         // check that the sent amount is equal to the key binding fee
-        if (isNewInsertion && amount != keyBindingFee || (!isNewInsertion && amount != 0)) {
+        if ((isNewInsertion && amount != keyBindingFee) || (!isNewInsertion && amount != 0)) {
             revert InvalidKeyBindingFeeAmount();
         }
 
@@ -380,8 +380,6 @@ contract HoprAnnouncements is
         internal
         returns (bool isNewInsertion, uint256 keyIdIndex)
     {
-
-
         (bool containsKey, uint256 position,) = _keyBindings.tryGet(ed25519_pub_key);
         if (containsKey) {
             // key already bound, return existing key id
