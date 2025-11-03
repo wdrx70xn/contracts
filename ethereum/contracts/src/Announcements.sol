@@ -79,8 +79,14 @@ contract HoprAnnouncementsProxy is ERC1967Proxy {
  * A node MAY bind multiple off-chain keys to the same chain-key.
  * A node MUST NOT bind the same off-chain keys to multiple chain-keys.
  * Key ids cannot be re-used or overwritten.
- * Key id 0 is reserved and MUST NOT be used.
  * The range of valid key ids is [0, 2^32 - 1].
+ *
+ * When a node binds its off-chain keys, it MUST pay a fee in wxHOPR tokens.
+ * The fee is burned by the contract.
+ * The fee amount is set by the contract owner and can be updated.
+ * The fee MAY be zero, if the contract owner decides so.
+ *
+ * The key binding process and announcement process are idempotent.
  *
  * The chain-key is used to retrieve the multiaddress base of a node.
  * By knowing the key id of a peer, a node can retrieve the off-chain keys and then the multiaddress base.
@@ -428,6 +434,9 @@ contract HoprAnnouncements is
 
     /**
      * @dev Updates the key binding fee.
+     * The new fee is applied to subsequent key bindings.
+     * The fee MAY be zero.
+     * @param newFee new fee amount in token's smallest unit
      */
     function _updateKeyBindingFeeInternal(uint256 newFee) internal {
         keyBindingFee = newFee;
