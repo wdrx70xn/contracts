@@ -22,7 +22,7 @@ contract EnumerableKeyBindingSetMock {
         return EnumerableKeyBindingSet.add(keyBindingSet, keyBinding);
     }
 
-    /// forge-lint:disable-next-line(mixed-case-variable)`
+    /// forge-lint:disable-next-line(mixed-case-variable)
     function contains(bytes32 ed25519_pub_key) public view returns (bool) {
         return EnumerableKeyBindingSet.contains(keyBindingSet, ed25519_pub_key);
     }
