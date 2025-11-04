@@ -183,7 +183,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         vm.prank(callerNode);
         // expect KeyBinding event emitted
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode, 0);
         hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
         // tokens are burned
         assertEq(hoprToken.balanceOf(callerNode), 0);
@@ -223,6 +223,64 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         vm.clearMockedCalls();
     }
 
+    function testRevert_BindKeyWithoutSufficientFunds(address callerNode)
+        public
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, address(0))
+        mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE * 2)
+    {
+        // prepare the key-binding payload, with announcing multiaddr
+        bytes memory keyBindPayload =
+            abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS);
+
+        vm.prank(callerNode);
+        vm.expectRevert(HoprAnnouncements.InvalidKeyBindingFeeAmount.selector);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE - 1, keyBindPayload);
+
+        // tokens are not burned
+        assertEq(hoprToken.balanceOf(callerNode), DEFAULT_KEY_BINDING_FEE * 2);
+        assertEq(hoprToken.totalSupply(), DEFAULT_KEY_BINDING_FEE * 2);
+        // no multiaddr announced
+        string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
+        assertEq(registeredMultiAddress, "");
+
+        vm.clearMockedCalls();
+    }
+
+    function testRevert_BindKeyAndAnnouncementFromNodeAgainWithTooMuchFee(address callerNode)
+        public
+        callerNodeIsUnused(callerNode)
+        mockNodeToSafe(callerNode, address(0))
+        mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE * 2)
+    {
+        // First time binding
+        bytes memory keyBindPayload =
+            abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS);
+
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode, 0);
+
+        vm.expectEmit(true, false, false, false, address(announcements));
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+
+        vm.prank(callerNode);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+
+        uint256 balanceAfterFirstBinding = hoprToken.balanceOf(callerNode);
+        uint256 totalSupplyAfterFirstBinding = hoprToken.totalSupply();
+
+        // Second time key binding with excessive fee reverts
+        vm.prank(callerNode);
+        vm.expectRevert(HoprAnnouncements.NoNeedToProvideKeyBindingFee.selector);
+        hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);
+
+        // tokens are not burned
+        assertEq(hoprToken.balanceOf(callerNode), balanceAfterFirstBinding);
+        assertEq(hoprToken.totalSupply(), totalSupplyAfterFirstBinding);
+
+        vm.clearMockedCalls();
+    }
+
     function testFuzz_BindKeyAndAnnouncementFromNodeForTheFirstTime(address callerNode)
         public
         callerNodeIsUnused(callerNode)
@@ -230,10 +288,10 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
     {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode, 0);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
         // prepare the key-binding payload, with announcing multiaddr
         bytes memory keyBindPayload =
@@ -245,7 +303,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         // tokens are burned
         assertEq(hoprToken.balanceOf(callerNode), 0);
         assertEq(hoprToken.totalSupply(), 0);
-        // no multiaddr announced
+        // multiaddr is announced
         string memory registeredMultiAddress = announcements.multiaddrOf(callerNode);
         assertEq(registeredMultiAddress, MULTIADDRESS);
 
@@ -259,7 +317,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         mockMintBalance(callerNode, DEFAULT_KEY_BINDING_FEE)
     {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode, 0);
 
         // prepare the key-binding payload, without announcing multiaddr
         bytes memory keyBindPayload = abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, "");
@@ -284,10 +342,10 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         mockMintBalance(callerSafe, DEFAULT_KEY_BINDING_FEE)
     {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode, 0);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
         // prepare the key-binding payload, with announcing multiaddr
         bytes memory keyBindPayload =
@@ -313,7 +371,7 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         mockMintBalance(callerSafe, DEFAULT_KEY_BINDING_FEE)
     {
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode, 0);
 
         // prepare the key-binding payload, with announcing multiaddr
         bytes memory keyBindPayload = abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, "");
@@ -342,10 +400,10 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
             abi.encode(callerNode, ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, MULTIADDRESS);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit AddressAnnouncement(callerNode, MULTIADDRESS);
+        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode, 0);
 
         vm.expectEmit(true, false, false, false, address(announcements));
-        emit KeyBinding(ED25519_SIG_0, ED25519_SIG_1, ED25519_PUB_KEY, callerNode);
+        emit AddressAnnouncement(callerNode, MULTIADDRESS);
 
         vm.prank(callerNode);
         hoprToken.send(address(announcements), DEFAULT_KEY_BINDING_FEE, keyBindPayload);

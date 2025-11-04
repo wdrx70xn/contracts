@@ -10,7 +10,6 @@ import { PermittableTokenFixtureTest } from "../test/utils/PermittableToken.sol"
 import { NetworkConfig } from "./utils/NetworkConfig.s.sol";
 import { BoostUtilsLib } from "./utils/BoostUtilsLib.sol";
 import { WinProb } from "../src/WinningProbabilityOracle.sol";
-import { HoprAnnouncements } from "../src/Announcements.sol";
 
 /**
  * @title Deploy all the required contracts in development, staging and production environment
@@ -26,8 +25,8 @@ contract DeployAllContractsScript is
     PermittableTokenFixtureTest
 {
     using BoostUtilsLib for address;
-
-    uint256 public constant KEY_BINDING_FEE = 10_000_000 gwei; // 0.01 HOPR in gwei unit
+    // starting key binding fee at deployment time
+    uint256 public constant INIT_KEY_BINDING_FEE = 10_000_000 gwei; // 0.01 HOPR in gwei unit
 
     bool internal isHoprChannelsDeployed;
     bool internal isHoprNetworkRegistryDeployed;
@@ -269,7 +268,7 @@ contract DeployAllContractsScript is
                         abi.encode(
                             currentNetworkDetail.addresses.tokenContractAddress,
                             currentNetworkDetail.addresses.nodeSafeRegistryAddress,
-                            KEY_BINDING_FEE,
+                            INIT_KEY_BINDING_FEE,
                             deployerAddress
                         )
                     )

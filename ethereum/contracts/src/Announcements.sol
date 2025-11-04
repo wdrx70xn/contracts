@@ -21,7 +21,12 @@ import {
 
 /// forge-lint:disable-next-item(mixed-case-variable)
 abstract contract HoprAnnouncementsEvents {
-    event KeyBinding(bytes32 ed25519_sig_0, bytes32 ed25519_sig_1, bytes32 ed25519_pub_key, address chain_key);
+    /**
+     * @dev Emitted when a new key binding is created
+     * Note that the key id uses uint256 format for gas saving reason.
+     * The key id range is controlled to be within uint32 range in the KeyBindingSet library.
+     */
+    event KeyBinding(bytes32 ed25519_sig_0, bytes32 ed25519_sig_1, bytes32 ed25519_pub_key, address chain_key, uint256 key_id);
 
     /**
      * A node is announce with a multiaddress base which a peer can use to
@@ -38,7 +43,7 @@ abstract contract HoprAnnouncementsEvents {
 
     event RevokeAnnouncement(address node);
 
-    event KeyBindingFeeUpdate(uint256 newFee);
+    event KeyBindingFeeUpdate(uint256 newFee, uint256 oldFee);
 }
 
 contract HoprAnnouncementsProxy is ERC1967Proxy {
@@ -90,6 +95,8 @@ contract HoprAnnouncementsProxy is ERC1967Proxy {
  *
  * The chain-key is used to retrieve the multiaddress base of a node.
  * By knowing the key id of a peer, a node can retrieve the off-chain keys and then the multiaddress base.
+ *
+ * Key-binding MUST be done before announcement.
  */
 /// forge-lint:disable-next-item(mixed-case-variable)
 contract HoprAnnouncements is
@@ -108,8 +115,9 @@ contract HoprAnnouncements is
     error InvalidTokenSender();
     error InvalidTokensReceivedUsage();
     error InvalidKeyBindingFeeAmount();
+    error NoNeedToProvideKeyBindingFee();
 
-    // required by ERC1820 spec
+    // required by ERC1820 spec. ERC1820 registry address
     IERC1820Registry internal constant _ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
     // required by ERC777 spec
     bytes32 public constant TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
@@ -119,7 +127,7 @@ contract HoprAnnouncements is
 
     // key bindings
     KeyBindingSet internal _keyBindings;
-    // announcements: chain-key => base-multiaddr
+    // key binding fee in TOKEN. This can be updated by the owner.
     uint256 public keyBindingFee = 10_000_000 gwei; // 0.01 wxHOPR tokens per key binding
     // accepted token for key binding fees
     /// forge-lint:disable-next-line(mixed-case-variable)
@@ -225,23 +233,28 @@ contract HoprAnnouncements is
             revert InvalidTokenSender();
         }
 
-        // perform optional announcement
+        // firstly, perform idempotent key binding
+        (bool isNewInsertion,) = _bindKeysInternal(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
+
+        if (isNewInsertion) {
+            // check that the sent amount is equal to the key binding fee
+            if (amount != keyBindingFee) revert InvalidKeyBindingFeeAmount();
+        } else if (amount != 0) {
+            // When it's an existing key binding,
+            // no need to pay again for existing key binding
+            revert NoNeedToProvideKeyBindingFee();
+        }
+
+        // secondly, perform optional announcement
         if (bytes(baseMultiaddr).length != 0) {
             _announceInternal(nodeAddress, baseMultiaddr);
         }
-        // perform idempotent key binding
-        (bool isNewInsertion,) = _bindKeysInternal(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key);
-        // check that the sent amount is equal to the key binding fee
-        if ((isNewInsertion && amount != keyBindingFee) || (!isNewInsertion && amount != 0)) {
-            revert InvalidKeyBindingFeeAmount();
-        }
-
         // burn the received tokens
         TOKEN.burn(amount, "");
     }
 
     /**
-     * @dev Authorizes contract upgrades. Only owner can upgrade the contract.
+     * @dev Only owner can update the key binding fee.
      */
     function updateKeyBindingFee(uint256 newFee) external onlyOwner {
         _updateKeyBindingFeeInternal(newFee);
@@ -395,8 +408,8 @@ contract HoprAnnouncements is
         // Otherwise, add new key binding
         keyIdIndex =
             _keyBindings.add(KeyBindingWithSignature(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
-        indexEvent(abi.encodePacked(KeyBinding.selector, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
-        emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress);
+        indexEvent(abi.encodePacked(KeyBinding.selector, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress, keyIdIndex));
+        emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress, keyIdIndex);
         return (true, keyIdIndex);
     }
 
@@ -439,9 +452,10 @@ contract HoprAnnouncements is
      * @param newFee new fee amount in token's smallest unit
      */
     function _updateKeyBindingFeeInternal(uint256 newFee) internal {
+        uint256 oldFee = keyBindingFee;
         keyBindingFee = newFee;
-        indexEvent(abi.encodePacked(KeyBindingFeeUpdate.selector, newFee));
-        emit KeyBindingFeeUpdate(newFee);
+        indexEvent(abi.encodePacked(KeyBindingFeeUpdate.selector, newFee, oldFee));
+        emit KeyBindingFeeUpdate(newFee, oldFee);
     }
 
     /**
