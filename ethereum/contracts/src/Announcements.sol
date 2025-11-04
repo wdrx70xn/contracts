@@ -26,7 +26,9 @@ abstract contract HoprAnnouncementsEvents {
      * Note that the key id uses uint256 format for gas saving reason.
      * The key id range is controlled to be within uint32 range in the KeyBindingSet library.
      */
-    event KeyBinding(bytes32 ed25519_sig_0, bytes32 ed25519_sig_1, bytes32 ed25519_pub_key, address chain_key, uint256 key_id);
+    event KeyBinding(
+        bytes32 ed25519_sig_0, bytes32 ed25519_sig_1, bytes32 ed25519_pub_key, address chain_key, uint256 key_id
+    );
 
     /**
      * A node is announce with a multiaddress base which a peer can use to
@@ -408,7 +410,11 @@ contract HoprAnnouncements is
         // Otherwise, add new key binding
         keyIdIndex =
             _keyBindings.add(KeyBindingWithSignature(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress));
-        indexEvent(abi.encodePacked(KeyBinding.selector, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress, keyIdIndex));
+        indexEvent(
+            abi.encodePacked(
+                KeyBinding.selector, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress, keyIdIndex
+            )
+        );
         emit KeyBinding(ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, selfAddress, keyIdIndex);
         return (true, keyIdIndex);
     }
