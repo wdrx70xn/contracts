@@ -252,7 +252,9 @@ contract HoprAnnouncements is
             _announceInternal(nodeAddress, baseMultiaddr);
         }
         // burn the received tokens
-        TOKEN.burn(amount, "");
+        if (amount > 0) {
+            TOKEN.burn(amount, "");
+        }
     }
 
     /**
