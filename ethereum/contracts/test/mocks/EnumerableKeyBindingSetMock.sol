@@ -5,7 +5,8 @@ pragma solidity ^0.8.0;
 import {
     EnumerableKeyBindingSet,
     KeyBindingSet,
-    KeyBindingWithSignature
+    KeyBindingWithSignature,
+    KeyBindingWithSignatureTimestamp
 } from "../../src/utils/EnumerableKeyBindingSet.sol";
 
 /**
@@ -30,21 +31,25 @@ contract EnumerableKeyBindingSetMock {
         return EnumerableKeyBindingSet.length(keyBindingSet);
     }
 
-    function at(uint256 index) public view returns (KeyBindingWithSignature memory) {
+    function at(uint256 index) public view returns (KeyBindingWithSignatureTimestamp memory) {
         return EnumerableKeyBindingSet.at(keyBindingSet, index);
     }
 
-    function values() public view returns (KeyBindingWithSignature[] memory) {
+    function values() public view returns (KeyBindingWithSignatureTimestamp[] memory) {
         return EnumerableKeyBindingSet.values(keyBindingSet);
     }
 
     /// forge-lint:disable-next-line(mixed-case-variable)
-    function tryGet(bytes32 ed25519_pub_key) public view returns (bool, uint256, KeyBindingWithSignature memory) {
+    function tryGet(bytes32 ed25519_pub_key)
+        public
+        view
+        returns (bool, uint256, KeyBindingWithSignatureTimestamp memory)
+    {
         return EnumerableKeyBindingSet.tryGet(keyBindingSet, ed25519_pub_key);
     }
 
     /// forge-lint:disable-next-line(mixed-case-variable)
-    function get(bytes32 ed25519_pub_key) public view returns (KeyBindingWithSignature memory) {
+    function get(bytes32 ed25519_pub_key) public view returns (KeyBindingWithSignatureTimestamp memory) {
         return EnumerableKeyBindingSet.get(keyBindingSet, ed25519_pub_key);
     }
 }

@@ -91,7 +91,7 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
     address internal constant SENTINEL_OWNERS = address(0x1);
     // The address of the ERC1820 registry contract
     address internal constant ERC1820_ADDRESS = 0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24;
-    // required by ERC1820 spec
+    // required by ERC1820 spec. ERC1820 registry address
     IERC1820Registry internal constant _ERC1820_REGISTRY = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
     // required by ERC777 spec
     bytes32 public constant TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
@@ -619,7 +619,7 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
         );
 
         // Generate a unique salt using the sender's address and the provided nonce
-        // / forge-lint: disable-next-line(asm-keccak256)
+        /// forge-lint: disable-next-line(asm-keccak256)
         bytes32 salt = keccak256(abi.encodePacked(caller, nonce));
 
         // Deploy module proxy (ERC1967Proxy) with CREATE2

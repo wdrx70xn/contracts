@@ -532,6 +532,7 @@ contract HoprNodeStakeFactoryTest is
         vm.clearMockedCalls();
     }
 
+    /// forge-lint:disable-next-item(mixed-case-variable)
     function testFuzz_GetSafeModuleDeployment(uint256 count) public mockTokenChannel {
         count = bound(count, 1, 10);
         // create a safe with the factory

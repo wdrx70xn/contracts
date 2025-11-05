@@ -33,7 +33,8 @@ abstract contract HoprLedger is HoprLedgerEvents {
 
     string public constant LEDGER_VERSION = "2.0.0";
 
-    uint256 public immutable SNAPSHOT_INTERVAL;
+    /// forge-lint:disable-next-line(mixed-case-variable)
+    uint256 public SNAPSHOT_INTERVAL;
 
     /**
      * Stores the last indexer state
@@ -56,19 +57,7 @@ abstract contract HoprLedger is HoprLedgerEvents {
      * @param _snapshotInterval time in seconds to create a new snapshot
      */
     constructor(uint256 _snapshotInterval) {
-        if (_snapshotInterval == 0) {
-            revert ZeroInterval();
-        }
-        SNAPSHOT_INTERVAL = _snapshotInterval;
-
-        // take first 28 bytes
-        _latestRoot.rootHash = bytes28(keccak256(abi.encodePacked(address(this))));
-        _latestRoot.timestamp = uint32(block.timestamp);
-
-        _latestSnapshotRoot = _latestRoot;
-
-        // compute the domain separator on deployment
-        updateLedgerDomainSeparator();
+        _initializeLedger(_snapshotInterval);
     }
 
     /**
@@ -97,6 +86,27 @@ abstract contract HoprLedger is HoprLedgerEvents {
 
     function latestSnapshotRoot() public view returns (RootStruct memory) {
         return _latestSnapshotRoot;
+    }
+
+    /**
+     * @dev Internal function to initialize the ledger in upgradeable contracts
+     * @param _snapshotInterval time in seconds to create a new snapshot
+     */
+    function _initializeLedger(uint256 _snapshotInterval) internal {
+        // ledger initialization logic can be added here if needed in the future
+        if (_snapshotInterval == 0) {
+            revert ZeroInterval();
+        }
+        SNAPSHOT_INTERVAL = _snapshotInterval;
+
+        // take first 28 bytes
+        _latestRoot.rootHash = bytes28(keccak256(abi.encodePacked(address(this))));
+        _latestRoot.timestamp = uint32(block.timestamp);
+
+        _latestSnapshotRoot = _latestRoot;
+
+        // compute the domain separator on deployment
+        updateLedgerDomainSeparator();
     }
 
     function indexEvent(bytes memory payload) internal {

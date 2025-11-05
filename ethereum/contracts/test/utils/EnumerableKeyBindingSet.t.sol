@@ -4,14 +4,13 @@ pragma solidity ^0.8.0;
 import { Test, stdStorage, StdStorage } from "forge-std/Test.sol";
 import {
     KeyBindingWithSignature,
-    EnumerableKeyBindingSet,
+    KeyBindingWithSignatureTimestamp,
     EnumerableKeyBindingSetMock
 } from "../mocks/EnumerableKeyBindingSetMock.sol";
-import { MAX_KEY_ID } from "../../src/utils/EnumerableKeyBindingSet.sol";
+import { MAX_KEY_ID, EnumerableKeyBindingSet } from "../../src/utils/EnumerableKeyBindingSet.sol";
 
 contract EnumerableKeyBindingSetTest is Test {
     using stdStorage for StdStorage;
-    using EnumerableKeyBindingSet for KeyBindingWithSignature;
 
     EnumerableKeyBindingSetMock public enumerableKeyBindingSetMock;
 
@@ -79,17 +78,39 @@ contract EnumerableKeyBindingSetTest is Test {
         // Include the first item
         assertEq(enumerableKeyBindingSetMock.add(keyBinding), 0);
         // check keyBinding is indeed added
-        KeyBindingWithSignature[] memory firstValues = enumerableKeyBindingSetMock.values();
+        KeyBindingWithSignatureTimestamp[] memory firstValues = enumerableKeyBindingSetMock.values();
         assertEq(firstValues.length, 1);
         assertEq(enumerableKeyBindingSetMock.length(), 1);
-        assertTrue(_compareKeyBinding(firstValues[0], keyBinding));
+        assertTrue(
+            _compareKeyBinding(
+                firstValues[0],
+                KeyBindingWithSignatureTimestamp(
+                    keyBinding.ed25519_sig_0,
+                    keyBinding.ed25519_sig_1,
+                    keyBinding.ed25519_pub_key,
+                    keyBinding.chain_key,
+                    block.timestamp
+                )
+            )
+        );
 
         // check adding another keyBinding
         assertEq(enumerableKeyBindingSetMock.add(keyBinding2), 1);
-        KeyBindingWithSignature[] memory secondValues = enumerableKeyBindingSetMock.values();
+        KeyBindingWithSignatureTimestamp[] memory secondValues = enumerableKeyBindingSetMock.values();
         assertEq(secondValues.length, 2);
         assertEq(enumerableKeyBindingSetMock.length(), 2);
-        assertTrue(_compareKeyBinding(secondValues[1], keyBinding2));
+        assertTrue(
+            _compareKeyBinding(
+                secondValues[1],
+                KeyBindingWithSignatureTimestamp(
+                    keyBinding2.ed25519_sig_0,
+                    keyBinding2.ed25519_sig_1,
+                    keyBinding2.ed25519_pub_key,
+                    keyBinding2.chain_key,
+                    block.timestamp
+                )
+            )
+        );
         // check set indeed contains the targetAddress
         assertTrue(enumerableKeyBindingSetMock.contains(pubkey1));
         assertTrue(enumerableKeyBindingSetMock.contains(pubkey2));
@@ -109,7 +130,7 @@ contract EnumerableKeyBindingSetTest is Test {
      */
     function test_Values() public beforeEach {
         // check default values
-        KeyBindingWithSignature[] memory values = enumerableKeyBindingSetMock.values();
+        KeyBindingWithSignatureTimestamp[] memory values = enumerableKeyBindingSetMock.values();
         assertEq(values.length, 0);
     }
 
@@ -124,7 +145,7 @@ contract EnumerableKeyBindingSetTest is Test {
     {
         // add unique values to target
         uint256 addedCount = _helperCreateKeyBindingSet(bytes32Vals);
-        KeyBindingWithSignature[] memory values = enumerableKeyBindingSetMock.values();
+        KeyBindingWithSignatureTimestamp[] memory values = enumerableKeyBindingSetMock.values();
         assertEq(addedCount, enumerableKeyBindingSetMock.length());
 
         for (uint256 i = 0; i < values.length; i++) {
@@ -149,7 +170,7 @@ contract EnumerableKeyBindingSetTest is Test {
         _helperCreateKeyBindingSet(bytes32Vals);
 
         for (uint256 i = 0; i < bytes32Vals.length; i++) {
-            (bool tryResult, uint256 index, KeyBindingWithSignature memory tryBinding) =
+            (bool tryResult, uint256 index, KeyBindingWithSignatureTimestamp memory tryBinding) =
                 enumerableKeyBindingSetMock.tryGet(bytes32Vals[i]);
             assertEq(index, i);
             assertTrue(_compareKeyBinding(tryBinding, enumerableKeyBindingSetMock.at(i)));
@@ -172,7 +193,7 @@ contract EnumerableKeyBindingSetTest is Test {
         // bytes32(0) is not going to be added to the set
         bytes32 nonExistentKey = bytes32(0);
 
-        (bool tryResult, uint256 index, KeyBindingWithSignature memory tryBinding) =
+        (bool tryResult, uint256 index, KeyBindingWithSignatureTimestamp memory tryBinding) =
             enumerableKeyBindingSetMock.tryGet(nonExistentKey);
         vm.expectRevert(EnumerableKeyBindingSet.NonExistentKey.selector);
         enumerableKeyBindingSetMock.get(nonExistentKey);
@@ -180,7 +201,9 @@ contract EnumerableKeyBindingSetTest is Test {
         assertFalse(tryResult);
         assertEq(index, 0);
         assertTrue(
-            _compareKeyBinding(tryBinding, KeyBindingWithSignature(bytes32(0), bytes32(0), bytes32(0), address(0)))
+            _compareKeyBinding(
+                tryBinding, KeyBindingWithSignatureTimestamp(bytes32(0), bytes32(0), bytes32(0), address(0), 0)
+            )
         );
     }
 
@@ -199,7 +222,7 @@ contract EnumerableKeyBindingSetTest is Test {
         if (bytes32Vals.length == 0) {
             return;
         } else {
-            (bool tryResult, uint256 index, KeyBindingWithSignature memory tryBinding) =
+            (bool tryResult, uint256 index, KeyBindingWithSignatureTimestamp memory tryBinding) =
                 enumerableKeyBindingSetMock.tryGet(bytes32Vals[0]);
             assertTrue(tryResult);
             assertEq(index, 0);
@@ -239,12 +262,13 @@ contract EnumerableKeyBindingSetTest is Test {
         return counter;
     }
 
-    function _compareKeyBinding(KeyBindingWithSignature memory a, KeyBindingWithSignature memory b)
+    function _compareKeyBinding(KeyBindingWithSignatureTimestamp memory a, KeyBindingWithSignatureTimestamp memory b)
         private
         pure
         returns (bool)
     {
         return (a.ed25519_sig_0 == b.ed25519_sig_0 && a.ed25519_sig_1 == b.ed25519_sig_1
-                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key);
+                && a.ed25519_pub_key == b.ed25519_pub_key && a.chain_key == b.chain_key
+                && a.boundTimestamp == b.boundTimestamp);
     }
 }
