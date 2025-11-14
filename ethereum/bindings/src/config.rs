@@ -39,6 +39,25 @@ pub struct ContractAddresses {
     pub winning_probability_oracle: Address,
 }
 
+impl IntoIterator for &ContractAddresses {
+    type IntoIter = std::vec::IntoIter<Address>;
+    type Item = Address;
+
+    fn into_iter(self) -> Self::IntoIter {
+        vec![
+            self.token,
+            self.channels,
+            self.announcements,
+            self.node_safe_registry,
+            self.ticket_price_oracle,
+            self.winning_probability_oracle,
+            self.node_stake_factory,
+            self.module_implementation,
+        ]
+            .into_iter()
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct SingleNetworkContractAddresses {
     pub indexer_start_block_number: u32,
