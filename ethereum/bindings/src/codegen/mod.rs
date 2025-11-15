@@ -5,6 +5,7 @@
 //! These files may be overwritten by the codegen system at any time.
 pub mod r#hopr_announcements;
 pub mod r#hopr_announcements_events;
+pub mod r#hopr_announcements_proxy;
 pub mod r#hopr_capability_permissions;
 pub mod r#hopr_channels;
 pub mod r#hopr_channels_events;
