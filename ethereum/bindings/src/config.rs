@@ -49,12 +49,13 @@ impl IntoIterator for &ContractAddresses {
             self.channels,
             self.announcements,
             self.node_safe_registry,
+            self.node_safe_migration,
             self.ticket_price_oracle,
             self.winning_probability_oracle,
             self.node_stake_factory,
             self.module_implementation,
         ]
-            .into_iter()
+        .into_iter()
     }
 }
 
