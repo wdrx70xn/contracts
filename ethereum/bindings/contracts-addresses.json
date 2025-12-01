@@ -13,7 +13,8 @@
         "winning_probability_oracle": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
       },
       "environment_type": "local",
-      "indexer_start_block_number": 1
+      "indexer_start_block_number": 1,
+      "chain_id": 31337,
     },
     "rotsee": {
       "addresses": {
@@ -28,7 +29,8 @@
         "winning_probability_oracle": "0xa641822a52AcbDc0c0123337f715C1d9756c21bD"
       },
       "environment_type": "staging",
-      "indexer_start_block_number": 42671336
+      "indexer_start_block_number": 42671336,
+      "chain_id": 100
     },
     "debug-staging": {
       "addresses": {
@@ -43,7 +45,8 @@
         "winning_probability_oracle": "0xF2d64bb29A5207DFCF6185161e43364D3B2D9A27"
       },
       "environment_type": "staging",
-      "indexer_start_block_number": 29690235
+      "indexer_start_block_number": 29690235,
+      "chain_id": 100
     }
   }
 }
