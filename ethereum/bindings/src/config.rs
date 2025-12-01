@@ -61,7 +61,7 @@ impl IntoIterator for &ContractAddresses {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct SingleNetworkContractAddresses {
-    pub chain_id: u32,
+    pub chain_id: u64,
     pub indexer_start_block_number: u32,
     pub addresses: ContractAddresses,
 }
