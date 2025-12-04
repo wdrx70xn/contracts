@@ -14,6 +14,8 @@ pub mod r#hopr_boost;
 pub mod r#hopr_token;
 pub mod r#hopr_ledger;
 pub mod r#hopr_node_management_module;
+pub mod r#hopr_node_safe_migration;
+pub mod r#hopr_node_safe_migration_events;
 pub mod r#hopr_node_safe_registry;
 pub mod r#hopr_node_safe_registry_events;
 pub mod r#hopr_node_stake_factory;
