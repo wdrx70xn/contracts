@@ -13,6 +13,7 @@ pub mod r#hopr_crypto;
 pub mod r#hopr_boost;
 pub mod r#hopr_token;
 pub mod r#hopr_ledger;
+pub mod r#hopr_ledger_events;
 pub mod r#hopr_node_management_module;
 pub mod r#hopr_node_safe_migration;
 pub mod r#hopr_node_safe_migration_events;
