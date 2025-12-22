@@ -2146,6 +2146,19 @@ dependencies = [
 [[package]]
 name = "hopr-bindings"
 version = "4.2.0"
+source = "git+https://github.com/hoprnet/contracts?branch=main#51967d7b9f22fbe5794b77408f36c23dcf73d209"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "const_format",
+ "serde",
+ "serde_json",
+ "serde_with",
+]
+
+[[package]]
+name = "hopr-bindings"
+version = "4.3.0"
 dependencies = [
  "alloy",
  "anyhow",
@@ -2167,19 +2180,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hopr-bindings"
-version = "4.2.0"
-source = "git+https://github.com/hoprnet/contracts?branch=main#51967d7b9f22fbe5794b77408f36c23dcf73d209"
-dependencies = [
- "alloy",
- "anyhow",
- "const_format",
- "serde",
- "serde_json",
- "serde_with",
-]
-
-[[package]]
 name = "hopr-chain-types"
 version = "0.12.1"
 source = "git+https://github.com/hoprnet/hoprnet?branch=master#81a2861db62c653d76c6eb385a7435c33516f830"
@@ -2187,7 +2187,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "hex-literal",
- "hopr-bindings 4.2.0 (git+https://github.com/hoprnet/contracts?branch=main)",
+ "hopr-bindings 4.2.0",
  "hopr-crypto-types",
  "hopr-internal-types",
  "hopr-primitive-types",
