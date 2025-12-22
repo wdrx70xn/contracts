@@ -8,6 +8,7 @@ use tracing::debug;
 
 use crate::{
     constants::*,
+    errors::HelperErrors,
     exports::alloy::{
         self,
         contract::{Error as ContractError, Result as ContractResult},
@@ -21,7 +22,7 @@ use crate::{
     hopr_channels::HoprChannels::HoprChannelsInstance,
     hopr_node_management_module::HoprNodeManagementModule,
     hopr_node_stake_factory::HoprNodeStakeFactory,
-    hopr_token::{HoprToken, HoprToken::HoprTokenInstance},
+    hopr_token::HoprToken::{self, HoprTokenInstance},
     utils::*,
 };
 
@@ -151,7 +152,7 @@ pub async fn get_safe_tx<P, N>(
     target: hopr_primitive_types::prelude::Address,
     inner_tx_data: Bytes,
     wallet: PrivateKeySigner,
-) -> anyhow::Result<N::TransactionRequest>
+) -> Result<N::TransactionRequest, HelperErrors>
 where
     P: alloy::contract::private::Provider<N>,
     N: alloy::providers::Network,
@@ -205,7 +206,7 @@ pub async fn include_node_to_module_by_safe<P, N>(
     module_address: hopr_primitive_types::prelude::Address,
     node_address: hopr_primitive_types::prelude::Address,
     deployer: &ChainKeypair, // also node address
-) -> anyhow::Result<()>
+) -> Result<(), HelperErrors>
 where
     P: alloy::contract::private::Provider<N> + Clone,
     N: alloy::providers::Network,
@@ -219,7 +220,8 @@ where
 
     // Inner tx payload: include node to the module
     let inner_tx_data = HoprNodeManagementModule::includeNodeCall {
-        nodeDefaultTarget: U256::from_str(&node_target_permission)?,
+        nodeDefaultTarget: U256::from_str(&node_target_permission)
+            .map_err(|e| HelperErrors::ParseError(format!("Unable to parse node target permission {e}")))?,
     }
     .abi_encode();
 
@@ -239,7 +241,7 @@ pub async fn add_announcement_as_target<P, N>(
     module_address: hopr_primitive_types::prelude::Address,
     announcement_contract_address: hopr_primitive_types::prelude::Address,
     deployer: &ChainKeypair, // also node address
-) -> ContractResult<()>
+) -> Result<(), HelperErrors>
 where
     P: alloy::contract::private::Provider<N> + Clone,
     N: alloy::providers::Network,
@@ -259,9 +261,7 @@ where
 
     let safe_contract = SafeContract::new(h2a(safe_address), provider.clone());
     let wallet = PrivateKeySigner::from_slice(deployer.secret().as_ref()).expect("failed to construct wallet");
-    let safe_tx = get_safe_tx(safe_contract, module_address, inner_tx_data.into(), wallet)
-        .await
-        .unwrap();
+    let safe_tx = get_safe_tx(safe_contract, module_address, inner_tx_data.into(), wallet).await?;
 
     provider.send_transaction(safe_tx).await?.watch().await?;
 

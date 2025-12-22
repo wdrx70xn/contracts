@@ -2,6 +2,7 @@ use alloy::{
     contract::Error as ContractError,
     hex::FromHexError,
     providers::{MulticallError, PendingTransactionError},
+    signers::Error as SignerError,
     transports::TransportErrorKind,
 };
 use hopr_crypto_keypair::errors::KeyPairError;
@@ -10,9 +11,13 @@ use thiserror::Error;
 /// Enumerates different errors produced by this crate.
 #[derive(Error, Debug)]
 pub enum HelperErrors {
-    /// Error of contract error
+    /// Error of hex conversion
     #[error(transparent)]
     FromHexError(#[from] FromHexError),
+
+    /// Error of signer error
+    #[error(transparent)]
+    SignerError(#[from] SignerError),
 
     /// Error of contract error
     #[error(transparent)]
