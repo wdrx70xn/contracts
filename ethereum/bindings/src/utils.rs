@@ -355,11 +355,27 @@ where
     }
 }
 
-/// Implement ethers-rs `get_create2_address` function
-/// Returns the CREATE2 address of a smart contract as specified in
-/// [EIP1014](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1014.md)
+/// Implement ethers-rs `get_create2_address` function.
 ///
-/// keccak256( 0xff ++ senderAddress ++ salt ++ keccak256(init_code))[12..]
+/// Returns the CREATE2 address of a smart contract as specified in
+/// [EIP1014](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1014.md).
+///
+/// Formula:
+/// `keccak256( 0xff ++ senderAddress ++ salt ++ keccak256(init_code) )[12..]`
+///
+/// # Arguments
+///
+/// * `from` - The address of the contract or externally owned account that will perform the `CREATE2` operation (the
+///   deployer/sender address).
+/// * `salt` - A user-provided salt value used to make the resulting address deterministic and unique for a given `from`
+///   and `init_code`. Typically this is a 32-byte value, but any byte slice is accepted here.
+/// * `init_code` - The creation bytecode of the contract to be deployed, i.e. the code that would be supplied to the
+///   EVM `CREATE2` opcode.
+///
+/// # Returns
+///
+/// The deterministic [`Address`] at which the contract would be deployed when
+/// `CREATE2` is called with the given `from`, `salt`, and `init_code`.
 pub fn get_create2_address(from: Address, salt: impl AsRef<[u8]>, init_code: impl AsRef<[u8]>) -> Address {
     let salt = salt.as_ref();
     let init_code_hash = keccak256(init_code.as_ref());
@@ -377,12 +393,15 @@ pub fn get_create2_address(from: Address, salt: impl AsRef<[u8]>, init_code: imp
     Address::from(bytes)
 }
 
-/// Creates local Anvil instance.
+/// Creates a local Anvil instance.
 ///
-/// Used for testing. When block time is given, new blocks are mined periodically.
-/// Otherwise, a new block is mined per transaction.
+/// Used for testing.
 ///
-/// Uses a fixed mnemonic to make generated accounts deterministic.
+/// # Parameters
+///
+/// * `block_time` - Optional block interval for automatic mining. When set to `Some(duration)`, Anvil is configured to
+///   mine new blocks periodically every `duration.as_secs()` seconds. When `None`, Anvil uses its default behavior and
+///   mines a new block for each transaction.
 pub fn create_anvil(block_time: Option<std::time::Duration>) -> alloy::node_bindings::AnvilInstance {
     let mut anvil = alloy::node_bindings::Anvil::new()
         .mnemonic("gentle wisdom move brush express similar canal dune emotion series because parrot");
@@ -394,6 +413,14 @@ pub fn create_anvil(block_time: Option<std::time::Duration>) -> alloy::node_bind
     anvil.spawn()
 }
 
+/// Creates a local Anvil instance bound to a specific port.
+///
+/// When `default` is `true`, Anvil listens on the default JSON-RPC port `8545`
+/// and uses the default chain configuration provided by Anvil.
+///
+/// When `default` is `false`, a random available localhost port is selected and
+/// used both as the listening port and as the chain ID for the Anvil instance.
+/// This is useful for running multiple isolated Anvil instances in parallel tests.
 pub fn create_anvil_at_port(default: bool) -> AnvilInstance {
     let mut anvil = Anvil::new();
 
@@ -421,6 +448,8 @@ pub type AnvilRpcClient = FillProvider<
 >;
 
 /// Used for testing. Creates RPC client to the local Anvil instance.
+/// The client uses the given signer for signing transactions.
+/// The signer is expected to be one of the Anvil generated accounts.
 pub fn create_rpc_client_to_anvil(
     anvil: &alloy::node_bindings::AnvilInstance,
     signer: &hopr_crypto_types::keypairs::ChainKeypair,

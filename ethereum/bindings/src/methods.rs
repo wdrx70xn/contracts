@@ -38,12 +38,20 @@ sol!(
     }
 );
 
-lazy_static::lazy_static! {
-    static ref MINTER_ROLE_VALUE: primitives::FixedBytes<32> = keccak256("MINTER_ROLE");
-}
-
 /// Creates a transaction that transfers the given `amount` of native tokens to the
-/// given destination.
+/// given destination address on the specified network.
+///
+/// # Parameters
+/// - `to`: The recipient's address that will receive the native tokens.
+/// - `amount`: The amount of native tokens to transfer, expressed as a `U256` value.
+///
+/// # Type Parameters
+/// - `N`: The target blockchain network, implementing [`alloy::providers::Network`], which defines the associated
+///   `TransactionRequest` type used for the returned transaction.
+///
+/// # Returns
+/// Returns an [`N::TransactionRequest`] configured with the `to` field set to the provided
+/// recipient address and the `value` field set to the specified amount of native tokens.
 pub fn create_native_transfer<N>(to: hopr_primitive_types::prelude::Address, amount: U256) -> N::TransactionRequest
 where
     N: alloy::providers::Network,
@@ -394,7 +402,8 @@ where
         .await?;
     debug!(%curr_nonce, "curr_nonce");
 
-    // FIXME: Check if this is the correct way to get the nonce
+    // Derive a deterministic salt by hashing the account address and its current pending nonce.
+    // This matches the factory's expectation of keccak256(abi.encodePacked(self_address, curr_nonce)).
     let nonce = keccak256((h2a(self_address), U256::from(curr_nonce)).abi_encode_packed());
     let default_target = format!("{:?}010103020202020202020202", instances.channels.address());
 
