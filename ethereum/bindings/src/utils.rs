@@ -1,4 +1,4 @@
-//! This module contains errors produced in this crate
+//! Utility helpers for contract deployment, interaction, and testing in this crate.
 
 use std::sync::Arc;
 

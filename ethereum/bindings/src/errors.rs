@@ -18,7 +18,7 @@ pub enum HelperErrors {
     #[error(transparent)]
     ContractError(#[from] ContractError),
 
-    /// Error propagated by pending transctions
+    /// Error propagated by pending transactions
     #[error(transparent)]
     PendingTransactionError(#[from] PendingTransactionError),
 
@@ -30,7 +30,7 @@ pub enum HelperErrors {
     #[error("error parsing address: {0:?}")]
     UnableToParseAddress(String),
 
-    /// System time rrror
+    /// System time error
     #[error(transparent)]
     SystemTime(#[from] std::time::SystemTimeError),
 
@@ -61,7 +61,7 @@ pub enum HelperErrors {
     #[error("unable to delete identity")]
     UnableToDeleteIdentity,
 
-    /// Provided environement does not match with that in the `ethereum/contracts/contracts-addresses.json`
+    /// Provided environment does not match with that in the `ethereum/contracts/contracts-addresses.json`
     #[error("environment info mismatch")]
     EnvironmentInfoMismatch,
 
@@ -74,14 +74,14 @@ pub enum HelperErrors {
     ErrorInRunningFoundry,
 
     /// Fail to read password
-    #[error("unable read password")]
+    #[error("unable to read password")]
     UnableToReadPassword,
 
     /// Fail to read private key
     #[error("cannot read private key error: {0}")]
     UnableToReadPrivateKey(String),
 
-    /// Paramters are missing
+    /// Parameters are missing
     #[error("missing parameter: {0}")]
     MissingParameter(String),
 

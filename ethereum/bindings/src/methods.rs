@@ -1,4 +1,4 @@
-//! This module contains errors produced in this crate
+//! This module contains helper methods for interacting with smart contracts used in this crate.
 
 use std::{str::FromStr};
 

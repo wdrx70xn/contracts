@@ -191,12 +191,6 @@ contract NodeSafeMigrationTest is
 
         // migrate the module singleton to the new version via delegatecall from the safe, using delegatecall
         vm.prank(caller);
-        // vm.expectEmit(false, false, false, true, safeAddress);
-        // emit SafeAndModuleMigrationCompleted(
-        // safeAddress,
-        // oldModuleProxy,
-        // newModuleProxyPrediction
-        //);
         _helperSafeTxnDelegateCall(address(migrationContract), IAvatar(safeAddress), callerPrivateKey, data);
 
         // check the module is now upgraded to the new singleton
@@ -270,12 +264,6 @@ contract NodeSafeMigrationTest is
 
         // migrate the module singleton to the new version via delegatecall from the safe, using delegatecall
         vm.prank(caller);
-        // vm.expectEmit(false, false, false, true, safeAddress);
-        // emit SafeAndModuleMigrationCompleted(
-        // safeAddress,
-        // oldModuleProxy,
-        // newModuleProxyPrediction
-        //);
         _helperSafeTxnDelegateCall(address(migrationContract), IAvatar(safeAddress), callerPrivateKey, data);
 
         // check the module is now upgraded to the new singleton
@@ -331,12 +319,6 @@ contract NodeSafeMigrationTest is
 
         // migrate the module singleton to the new version via delegatecall from the safe, using delegatecall
         vm.prank(caller);
-        // vm.expectEmit(false, false, false, true, safeAddress);
-        // emit SafeAndModuleMigrationCompleted(
-        // safeAddress,
-        // oldModuleProxy,
-        // newModuleProxyPrediction
-        //);
         _helperSafeTxnDelegateCall(address(migrationContract), IAvatar(safeAddress), callerPrivateKey, data);
 
         // check the module is now upgraded to the new singleton
