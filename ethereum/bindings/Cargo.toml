@@ -12,9 +12,6 @@ license = "GPL-3.0-only"
 anyhow = { workspace = true }
 const_format = { workspace = true }
 
-[dev-dependencies]
-env_logger = { workspace = true }
-
 [dependencies]
 alloy = { workspace = true, default-features = false, features = ["contract"] }
 anyhow = { workspace = true }

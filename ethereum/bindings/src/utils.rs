@@ -452,7 +452,6 @@ mod tests {
     /// test the deploy_for_testing method returns the correct contract addresses as in contracts-addresses.json file
     #[tokio::test]
     async fn test_deploy_for_testing() -> anyhow::Result<()> {
-        let _ = env_logger::builder().is_test(true).try_init();
         // launch local anvil instance
         let anvil = create_anvil(None);
         let contract_deployer = ChainKeypair::from_secret(anvil.keys()[0].to_bytes().as_ref())?;
