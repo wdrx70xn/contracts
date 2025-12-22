@@ -1,6 +1,6 @@
 [package]
 name = "hopr-bindings"
-version = "4.2.0"
+version = "4.3.0"
 description = "This package only exists to automate the export and generation of Rust bindings into the HOPR project"
 edition = "2021"
 homepage = "https://hoprnet.org/"
@@ -16,5 +16,9 @@ const_format = { workspace = true }
 alloy = { workspace = true, default-features = false, features = ["contract"] }
 anyhow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+hex-literal = { workspace = true }
 serde_with = { workspace = true }
 serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

@@ -7,6 +7,7 @@
 mod codegen;
 
 pub mod config;
+pub mod constants;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub use codegen::*;

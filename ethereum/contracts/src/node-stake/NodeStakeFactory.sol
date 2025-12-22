@@ -426,6 +426,7 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
             _prepareSafeTx(safeProxyAddr, swapOwnerData);
         }
 
+        emit NewHoprNodeStakeModuleForSafe(moduleProxy, safeProxyAddr);
         return (moduleProxy, safeProxyAddr);
     }
 
@@ -493,6 +494,7 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
             _prepareSafeTx(safeProxyAddr, swapOwnerData);
         }
 
+        emit NewHoprNodeStakeModuleForSafe(moduleProxy, safeProxyAddr);
         return (moduleProxy, safeProxyAddr);
     }
 
