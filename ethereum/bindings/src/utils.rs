@@ -2,14 +2,18 @@
 
 use std::sync::Arc;
 
+use hopr_crypto_types::{keypairs::ChainKeypair, prelude::Keypair};
+use tracing::debug;
+
 use crate::{
+    constants::*,
     exports::alloy::{
         self,
         contract::Result as ContractResult,
         network::{EthereumWallet, TransactionBuilder},
         node_bindings::{Anvil, AnvilInstance},
         primitives::{self, Address, keccak256},
-        providers::{MULTICALL3_ADDRESS, fillers::*, Identity, RootProvider},
+        providers::{Identity, MULTICALL3_ADDRESS, RootProvider, fillers::*},
         rpc::types::TransactionRequest,
         sol_types::{SolCall, SolValue},
     },
@@ -28,10 +32,6 @@ use crate::{
         HoprWinningProbabilityOracle, HoprWinningProbabilityOracle::HoprWinningProbabilityOracleInstance,
     },
 };
-use hopr_crypto_types::{keypairs::ChainKeypair, prelude::Keypair};
-use tracing::debug;
-
-use crate::constants::*;
 
 // Used instead of From implementation to avoid alloy being a dependency of the primitive crates
 /// Converts [`alloy::primitives::Address`] into [`hopr_primitive_types::prelude::Address`]
@@ -448,7 +448,7 @@ pub fn create_rpc_client_to_anvil(
         transports::http::ReqwestTransport,
     };
     use hopr_crypto_types::keypairs::Keypair;
-    
+
     let wallet = PrivateKeySigner::from_slice(signer.secret().as_ref()).expect("failed to construct wallet");
 
     let transport_client = ReqwestTransport::new(anvil.endpoint_url());
@@ -462,8 +462,9 @@ pub fn create_rpc_client_to_anvil(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::{ffi::OsStr, path::PathBuf};
+
+    use super::*;
     use crate::{config::NetworksWithContractAddresses, errors::HelperErrors};
 
     /// test the deploy_for_testing method returns the correct contract addresses as in contracts-addresses.json file
@@ -479,17 +480,21 @@ mod tests {
             .await
             .expect("failed to deploy");
         println!("deployed hopr contracts {:?}", instances);
-        
+
         // get contract addresses from contracts-addresses.json in the parent directory
         let binding_dir = std::env::current_dir()?;
         let contract_root = binding_dir.to_str().unwrap();
         let contract_environment_config_path =
             PathBuf::from(OsStr::new(contract_root)).join("contracts-addresses.json");
-        debug!("contract_environment_config_path {:?}", contract_environment_config_path);
-        let file_read = std::fs::read_to_string(contract_environment_config_path)
-        .map_err(HelperErrors::UnableToReadFromPath)?;
-        
-        let networks_with_contract_addresses = serde_json::from_str::<NetworksWithContractAddresses>(&file_read).map_err(HelperErrors::SerdeJson)?;
+        debug!(
+            "contract_environment_config_path {:?}",
+            contract_environment_config_path
+        );
+        let file_read =
+            std::fs::read_to_string(contract_environment_config_path).map_err(HelperErrors::UnableToReadFromPath)?;
+
+        let networks_with_contract_addresses =
+            serde_json::from_str::<NetworksWithContractAddresses>(&file_read).map_err(HelperErrors::SerdeJson)?;
         let expected_addresses = networks_with_contract_addresses
             .networks
             .get("anvil-localhost")
@@ -502,15 +507,30 @@ mod tests {
         assert_eq!(expected_addresses.token, *instances.token.address());
         assert_eq!(expected_addresses.channels, *instances.channels.address());
         assert_eq!(expected_addresses.announcements, *instances.announcements.address());
-        assert_eq!(expected_addresses.node_safe_registry, *instances.safe_registry.address());
-        assert_eq!(expected_addresses.ticket_price_oracle, *instances.price_oracle.address());
+        assert_eq!(
+            expected_addresses.node_safe_registry,
+            *instances.safe_registry.address()
+        );
+        assert_eq!(
+            expected_addresses.ticket_price_oracle,
+            *instances.price_oracle.address()
+        );
         assert_eq!(
             expected_addresses.winning_probability_oracle,
             *instances.win_prob_oracle.address()
         );
-        assert_eq!(expected_addresses.node_stake_factory, *instances.stake_factory.address());
-        assert_eq!(expected_addresses.module_implementation, *instances.module_implementation.address());
-        assert_eq!(expected_addresses.node_safe_migration, *instances.node_safe_migration.address());
+        assert_eq!(
+            expected_addresses.node_stake_factory,
+            *instances.stake_factory.address()
+        );
+        assert_eq!(
+            expected_addresses.module_implementation,
+            *instances.module_implementation.address()
+        );
+        assert_eq!(
+            expected_addresses.node_safe_migration,
+            *instances.node_safe_migration.address()
+        );
         Ok(())
     }
 }

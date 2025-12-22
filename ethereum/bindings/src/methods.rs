@@ -1,9 +1,14 @@
 //! This module contains helper methods for interacting with smart contracts used in this crate.
 
-use std::{str::FromStr};
+use std::str::FromStr;
 
 use SafeContract::SafeContractInstance;
+use hopr_chain_types::errors::ChainTypesError;
+use hopr_crypto_types::{keypairs::ChainKeypair, prelude::Keypair};
+use tracing::debug;
+
 use crate::{
+    constants::*,
     exports::alloy::{
         self,
         contract::{Error as ContractError, Result as ContractResult},
@@ -14,17 +19,12 @@ use crate::{
         sol,
         sol_types::{SolCall, SolValue},
     },
-    hopr_channels::{HoprChannels::HoprChannelsInstance},
+    hopr_channels::HoprChannels::HoprChannelsInstance,
     hopr_node_management_module::HoprNodeManagementModule,
     hopr_node_stake_factory::HoprNodeStakeFactory,
     hopr_token::{HoprToken, HoprToken::HoprTokenInstance},
+    utils::*,
 };
-use hopr_chain_types::{errors::ChainTypesError};
-use hopr_crypto_types::{keypairs::ChainKeypair, prelude::Keypair};
-use tracing::debug;
-
-use crate::constants::*;
-use crate::utils::*;
 
 // define basic safe abi
 sol!(

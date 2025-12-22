@@ -1,8 +1,8 @@
-use hex_literal::hex;
 use alloy::{
     primitives::{Address, FixedBytes, U256, address, b256},
     uint,
 };
+use hex_literal::hex;
 
 /// Initial key binding fee required to initialize a key binding in the HOPR token contract
 pub const INIT_KEY_BINDING_FEE: U256 = uint!(10_000_000_000_000_000_U256); // 0.01 ether
@@ -160,9 +160,10 @@ pub const DEPLOYSAFEANDMODULEANDINCLUDENODES_IDENTIFIER: FixedBytes<32> =
 
 #[cfg(test)]
 pub mod tests {
-    use crate::hopr_channels::HoprChannels::redeemTicketCall;
     use alloy::sol_types::SolCall;
     use hopr_internal_types::tickets::REDEEM_CALL_SELECTOR;
+
+    use crate::hopr_channels::HoprChannels::redeemTicketCall;
 
     #[test]
     fn test_redeem_ticket_selector_match_with_binding() {

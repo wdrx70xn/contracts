@@ -1,11 +1,11 @@
-use thiserror::Error;
 use alloy::{
-    contract::Error as ContractError, 
+    contract::Error as ContractError,
     hex::FromHexError,
     providers::{MulticallError, PendingTransactionError},
     transports::TransportErrorKind,
 };
 use hopr_crypto_keypair::errors::KeyPairError;
+use thiserror::Error;
 
 /// Enumerates different errors produced by this crate.
 #[derive(Error, Debug)]
