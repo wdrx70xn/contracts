@@ -34,7 +34,6 @@ hopr-crypto-keypair = { git = "https://github.com/hoprnet/hoprnet", branch = "ma
   "to-file",
 ] }
 hopr-crypto-types = { git = "https://github.com/hoprnet/hoprnet", branch = "master" }
-hopr-internal-types = { git = "https://github.com/hoprnet/hoprnet", branch = "master" }
 hopr-primitive-types = { git = "https://github.com/hoprnet/hoprnet", branch = "master" }
 
 [profile.dev]

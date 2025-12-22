@@ -157,16 +157,3 @@ pub const DEPLOYSAFEMODULE_FUNCTION_IDENTIFIER: FixedBytes<32> =
 /// used in creating userdata when sending tokens along with safe creation
 pub const DEPLOYSAFEANDMODULEANDINCLUDENODES_IDENTIFIER: FixedBytes<32> =
     b256!("0105b97dcdf19d454ebe36f91ed516c2b90ee79f4a46af96a0138c1f5403c1cc");
-
-#[cfg(test)]
-pub mod tests {
-    use alloy::sol_types::SolCall;
-    use hopr_internal_types::tickets::REDEEM_CALL_SELECTOR;
-
-    use crate::hopr_channels::HoprChannels::redeemTicketCall;
-
-    #[test]
-    fn test_redeem_ticket_selector_match_with_binding() {
-        assert_eq!(REDEEM_CALL_SELECTOR, redeemTicketCall::SELECTOR);
-    }
-}
