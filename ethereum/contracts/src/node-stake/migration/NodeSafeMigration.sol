@@ -26,6 +26,7 @@ abstract contract HoprNodeSafeMigrationEvents {
      */
     event SafeAndModuleMigrationCompleted(address safeProxy, address oldModuleProxy, address newModuleProxy);
     event ChangedModuleImplementation(address moduleProxy);
+    event DeployedNewV4Module(address newModuleProxy);
 }
 
 /**
@@ -158,5 +159,26 @@ contract HoprNodeSafeMigration is HoprNodeSafeMigrationEvents, SafeMigration, Ex
         IAvatar(address(this)).disableModule(newModuleProxy, oldModuleProxy);
 
         emit SafeAndModuleMigrationCompleted(address(this), oldModuleProxy, newModuleProxy);
+    }
+
+    /**
+     * @notice Deploy a new v4 module and enable it in the Safe, without removing the old module.
+     * @param defaultTarget Default target address for the new module
+     * @param nonce Nonce for the new module deployment
+     * @param nodes List of node addresses to be included in the new module
+     * @return newModuleProxy Address of the newly deployed module proxy
+     */
+    function deployNewV4Module(bytes32 defaultTarget, uint256 nonce, address[] memory nodes)
+        public
+        onlyDelegateCall
+        returns (address newModuleProxy)
+    {
+        // deploy a new module contract
+        newModuleProxy = IHoprNodeStakeFactory(FACTORY_ADDRESS).deployModule(address(this), defaultTarget, nonce);
+        // add all the nodes to the new module
+        IHoprNodeManagementModule(newModuleProxy).includeNodes(nodes);
+        // enable the newly deployed module
+        IAvatar(address(this)).enableModule(newModuleProxy);
+        emit DeployedNewV4Module(newModuleProxy);
     }
 }
