@@ -3,7 +3,6 @@
 use std::str::FromStr;
 
 use SafeContract::SafeContractInstance;
-use hopr_chain_types::errors::ChainTypesError;
 use hopr_crypto_types::{keypairs::ChainKeypair, prelude::Keypair};
 use tracing::debug;
 
@@ -228,18 +227,12 @@ where
     let wallet = PrivateKeySigner::from_slice(deployer.secret().as_ref()).expect("failed to construct wallet");
     let safe_tx = get_safe_tx(safe_contract, module_address, inner_tx_data.into(), wallet).await?;
 
-    provider
-        .send_transaction(safe_tx)
-        .await
-        .map_err(|e| ChainTypesError::ContractError(e.into()))?
-        .watch()
-        .await
-        .map_err(|e| ChainTypesError::ContractError(e.into()))?;
+    provider.send_transaction(safe_tx).await?.watch().await?;
 
     Ok(())
 }
 
-/// Send a Safe transaction to the module to include annoucement to the module
+/// Send a Safe transaction to the module to include announcement to the module
 pub async fn add_announcement_as_target<P, N>(
     provider: P,
     safe_address: hopr_primitive_types::prelude::Address,

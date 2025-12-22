@@ -2152,7 +2152,6 @@ dependencies = [
  "const_format",
  "env_logger",
  "hex-literal",
- "hopr-chain-types",
  "hopr-crypto-keypair",
  "hopr-crypto-types",
  "hopr-internal-types",
@@ -2164,26 +2163,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "hopr-chain-types"
-version = "0.12.1"
-source = "git+https://github.com/hoprnet/hoprnet?branch=master#81a2861db62c653d76c6eb385a7435c33516f830"
-dependencies = [
- "anyhow",
- "async-trait",
- "hex-literal",
- "hopr-bindings",
- "hopr-crypto-types",
- "hopr-internal-types",
- "hopr-primitive-types",
- "lazy_static",
- "multiaddr",
- "serde",
- "serde_with",
- "strum",
- "thiserror",
 ]
 
 [[package]]

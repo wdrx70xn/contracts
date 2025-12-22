@@ -26,7 +26,6 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
-hopr-chain-types = { workspace = true }
 hopr-crypto-keypair = { workspace = true }
 hopr-crypto-types = { workspace = true }
 hopr-internal-types = { workspace = true }

@@ -62,7 +62,7 @@ impl<P> ContractInstances<P>
 where
     P: alloy::providers::Provider + Clone,
 {
-    pub fn new(contract_addresses: &hopr_chain_types::ContractAddresses, provider: P) -> Self {
+    pub fn new(contract_addresses: &crate::ContractAddresses, provider: P) -> Self {
         Self {
             token: HoprTokenInstance::new(contract_addresses.token, provider.clone()),
             channels: HoprChannelsInstance::new(contract_addresses.channels, provider.clone()),
@@ -350,25 +350,6 @@ where
             node_stake_factory: *self.stake_factory.address(),
             module_implementation: *self.module_implementation.address(),
             node_safe_migration: *self.node_safe_migration.address(),
-        }
-    }
-}
-
-impl<P> From<&ContractInstances<P>> for hopr_chain_types::ContractAddresses
-where
-    P: alloy::providers::Provider + Clone,
-{
-    fn from(instances: &ContractInstances<P>) -> Self {
-        Self {
-            token: *instances.token.address(),
-            channels: *instances.channels.address(),
-            announcements: *instances.announcements.address(),
-            node_safe_registry: *instances.safe_registry.address(),
-            ticket_price_oracle: *instances.price_oracle.address(),
-            winning_probability_oracle: *instances.win_prob_oracle.address(),
-            node_safe_migration: *instances.node_safe_migration.address(),
-            node_stake_factory: *instances.stake_factory.address(),
-            module_implementation: *instances.module_implementation.address(),
         }
     }
 }
