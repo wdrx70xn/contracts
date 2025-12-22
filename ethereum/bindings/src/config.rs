@@ -59,6 +59,23 @@ impl IntoIterator for &ContractAddresses {
     }
 }
 
+/// Implement Into trait for use hopr_chain_types::ContractAddresses
+impl From<ContractAddresses> for hopr_chain_types::ContractAddresses {
+    fn from(addresses: ContractAddresses) -> Self {
+        Self {
+            announcements: addresses.announcements,
+            channels: addresses.channels,
+            module_implementation: addresses.module_implementation,
+            node_safe_migration: addresses.node_safe_migration,
+            node_safe_registry: addresses.node_safe_registry,
+            node_stake_factory: addresses.node_stake_factory,
+            ticket_price_oracle: addresses.ticket_price_oracle,
+            token: addresses.token,
+            winning_probability_oracle: addresses.winning_probability_oracle,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct SingleNetworkContractAddresses {
     pub chain_id: u64,

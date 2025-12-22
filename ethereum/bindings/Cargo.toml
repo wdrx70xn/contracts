@@ -12,9 +12,22 @@ license = "GPL-3.0-only"
 anyhow = { workspace = true }
 const_format = { workspace = true }
 
+[dev-dependencies]
+env_logger = { workspace = true }
+
 [dependencies]
 alloy = { workspace = true, default-features = false, features = ["contract"] }
 anyhow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+hex-literal = { workspace = true }
+lazy_static = { workspace = true }
 serde_with = { workspace = true }
 serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+hopr-chain-types = { workspace = true }
+hopr-crypto-keypair = { workspace = true }
+hopr-crypto-types = { workspace = true }
+hopr-internal-types = { workspace = true }
+hopr-primitive-types = { workspace = true }
