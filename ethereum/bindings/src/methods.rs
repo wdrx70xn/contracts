@@ -11,7 +11,7 @@ use crate::{
     errors::HelperErrors,
     exports::alloy::{
         self,
-        contract::{Error as ContractError, Result as ContractResult},
+        contract::Error as ContractError,
         network::{ReceiptResponse, TransactionBuilder},
         primitives::{self, Bytes, U256, aliases, keccak256},
         rpc::types::TransactionRequest,
@@ -58,7 +58,7 @@ pub async fn fund_node<P, N>(
     native_token: U256,
     hopr_token: U256,
     hopr_token_contract: HoprTokenInstance<P, N>,
-) -> ContractResult<()>
+) -> Result<(), HelperErrors>
 where
     P: alloy::contract::private::Provider<N>,
     N: alloy::providers::Network,
@@ -91,7 +91,7 @@ pub async fn fund_channel<P, N>(
     hopr_token: HoprTokenInstance<P, N>,
     hopr_channels: HoprChannelsInstance<P, N>,
     amount: U256,
-) -> ContractResult<()>
+) -> Result<(), HelperErrors>
 where
     P: alloy::contract::private::Provider<N>,
     N: alloy::providers::Network,
@@ -121,7 +121,7 @@ pub async fn fund_channel_from_different_client<P, N>(
     hopr_channels_address: hopr_primitive_types::prelude::Address,
     amount: U256,
     new_client: P,
-) -> ContractResult<()>
+) -> Result<(), HelperErrors>
 where
     P: alloy::contract::private::Provider<N> + Clone,
     N: alloy::providers::Network,
@@ -255,7 +255,8 @@ where
 
     // Inner tx payload: include node to the module
     let inner_tx_data = HoprNodeManagementModule::scopeTargetTokenCall {
-        defaultTarget: U256::from_str(&announcement_target_permission).unwrap(),
+        defaultTarget: U256::from_str(&announcement_target_permission)
+            .map_err(|e| HelperErrors::ParseError(format!("Unable to parse announcement target {e}")))?,
     }
     .abi_encode();
 
@@ -275,7 +276,7 @@ pub async fn approve_channel_transfer_from_safe<P, N>(
     token_address: hopr_primitive_types::prelude::Address,
     channel_address: hopr_primitive_types::prelude::Address,
     deployer: &ChainKeypair, // also node address
-) -> ContractResult<()>
+) -> Result<(), HelperErrors>
 where
     P: alloy::contract::private::Provider<N> + Clone,
     N: alloy::providers::Network,
@@ -289,9 +290,7 @@ where
 
     let safe_contract = SafeContract::new(h2a(safe_address), provider.clone());
     let wallet = PrivateKeySigner::from_slice(deployer.secret().as_ref()).expect("failed to construct wallet");
-    let safe_tx = get_safe_tx(safe_contract, token_address, inner_tx_data.into(), wallet)
-        .await
-        .unwrap();
+    let safe_tx = get_safe_tx(safe_contract, token_address, inner_tx_data.into(), wallet).await?;
 
     provider.send_transaction(safe_tx).await?.watch().await?;
 
@@ -312,10 +311,13 @@ pub async fn deploy_one_safe_one_module_and_setup_for_testing<P>(
     instances: &ContractInstances<P>,
     provider: P,
     deployer: &ChainKeypair,
-) -> ContractResult<(
-    hopr_primitive_types::prelude::Address,
-    hopr_primitive_types::prelude::Address,
-)>
+) -> Result<
+    (
+        hopr_primitive_types::prelude::Address,
+        hopr_primitive_types::prelude::Address,
+    ),
+    HelperErrors,
+>
 where
     P: alloy::providers::Provider + Clone,
 {
@@ -342,7 +344,9 @@ where
                 .await?
                 .get_receipt()
                 .await?;
-            tx_receipt.contract_address().unwrap()
+            tx_receipt
+                .contract_address()
+                .ok_or(HelperErrors::ContractError(ContractError::ContractNotDeployed))?
         };
         debug!(%safe_diamond_proxy_address, "Safe diamond proxy singleton");
 
@@ -387,8 +391,7 @@ where
         .get_transaction_count(h2a(self_address))
         .pending()
         //  Some(BlockNumber::Pending.into()))
-        .await
-        .unwrap();
+        .await?;
     debug!(%curr_nonce, "curr_nonce");
 
     // FIXME: Check if this is the correct way to get the nonce
@@ -398,13 +401,14 @@ where
     debug!(%self_address, "self_address");
     debug!("nonce {:?}", U256::from_be_bytes(nonce.0).to_string());
     debug!("default_target in bytes {:?}", default_target.bytes());
-    debug!("default_target in u256 {:?}", U256::from_str(&default_target).unwrap());
 
+    let default_target_u256 = U256::from_str(&default_target)
+        .map_err(|e| HelperErrors::ParseError(format!("Unable to parse node target permission {e}")))?;
     let typed_tx = HoprNodeStakeFactory::cloneCall {
         // moduleSingletonAddress: *instances.module_implementation.address(),
         admins: vec![h2a(self_address)],
         nonce: nonce.into(),
-        defaultTarget: U256::from_str(&default_target).unwrap().into(),
+        defaultTarget: default_target_u256.into(),
     }
     .abi_encode();
 
@@ -416,7 +420,9 @@ where
         .clone(
             //*instances.module_implementation.address(),
             nonce.into(),
-            U256::from_str(&default_target).unwrap().into(),
+            U256::from_str(&default_target)
+                .map_err(|e| HelperErrors::ParseError(format!("Unable to parse node target permission {e}")))?
+                .into(),
             vec![h2a(self_address)],
         )
         .send()
@@ -431,7 +437,7 @@ where
         let HoprNodeStakeFactory::NewHoprNodeStakeModule { instance, .. } = module_tx_log.data;
         instance
     } else {
-        return Err(ContractError::ContractNotDeployed);
+        return Err(HelperErrors::ContractError(ContractError::ContractNotDeployed));
     };
 
     let maybe_safe_tx_log = instance_deployment_tx_receipt.decoded_log::<HoprNodeStakeFactory::NewHoprNodeStakeSafe>();
@@ -439,7 +445,7 @@ where
         let HoprNodeStakeFactory::NewHoprNodeStakeSafe { instance } = safe_tx_log.data;
         instance
     } else {
-        return Err(ContractError::ContractNotDeployed);
+        return Err(HelperErrors::ContractError(ContractError::ContractNotDeployed));
     };
 
     debug!("instance_deployment_tx module instance {:?}", deployed_module_address);

@@ -7,9 +7,9 @@ use tracing::debug;
 
 use crate::{
     constants::*,
+    errors::HelperErrors,
     exports::alloy::{
         self,
-        contract::Result as ContractResult,
         network::{EthereumWallet, TransactionBuilder},
         node_bindings::{Anvil, AnvilInstance},
         primitives::{self, Address, keccak256},
@@ -17,20 +17,16 @@ use crate::{
         rpc::types::TransactionRequest,
         sol_types::{SolCall, SolValue},
     },
-    hopr_announcements::{HoprAnnouncements, HoprAnnouncements::HoprAnnouncementsInstance},
+    hopr_announcements::HoprAnnouncements::{self, HoprAnnouncementsInstance},
     hopr_announcements_proxy::HoprAnnouncementsProxy,
-    hopr_channels::{HoprChannels, HoprChannels::HoprChannelsInstance},
-    hopr_node_management_module::{
-        HoprNodeManagementModule, HoprNodeManagementModule::HoprNodeManagementModuleInstance,
-    },
-    hopr_node_safe_migration::{HoprNodeSafeMigration, HoprNodeSafeMigration::HoprNodeSafeMigrationInstance},
-    hopr_node_safe_registry::{HoprNodeSafeRegistry, HoprNodeSafeRegistry::HoprNodeSafeRegistryInstance},
-    hopr_node_stake_factory::{HoprNodeStakeFactory, HoprNodeStakeFactory::HoprNodeStakeFactoryInstance},
-    hopr_ticket_price_oracle::{HoprTicketPriceOracle, HoprTicketPriceOracle::HoprTicketPriceOracleInstance},
-    hopr_token::{HoprToken, HoprToken::HoprTokenInstance},
-    hopr_winning_probability_oracle::{
-        HoprWinningProbabilityOracle, HoprWinningProbabilityOracle::HoprWinningProbabilityOracleInstance,
-    },
+    hopr_channels::HoprChannels::{self, HoprChannelsInstance},
+    hopr_node_management_module::HoprNodeManagementModule::{self, HoprNodeManagementModuleInstance},
+    hopr_node_safe_migration::HoprNodeSafeMigration::{self, HoprNodeSafeMigrationInstance},
+    hopr_node_safe_registry::HoprNodeSafeRegistry::{self, HoprNodeSafeRegistryInstance},
+    hopr_node_stake_factory::HoprNodeStakeFactory::{self, HoprNodeStakeFactoryInstance},
+    hopr_ticket_price_oracle::HoprTicketPriceOracle::{self, HoprTicketPriceOracleInstance},
+    hopr_token::HoprToken::{self, HoprTokenInstance},
+    hopr_winning_probability_oracle::HoprWinningProbabilityOracle::{self, HoprWinningProbabilityOracleInstance},
 };
 
 // Used instead of From implementation to avoid alloy being a dependency of the primitive crates
@@ -85,7 +81,7 @@ where
         }
     }
 
-    pub async fn deploy_erc1820_registry(provider: P) -> ContractResult<()> {
+    pub async fn deploy_erc1820_registry(provider: P) -> Result<(), HelperErrors> {
         debug!("deploying ERC1820 registry...");
         // Fund 1820 deployer and deploy ERC1820Registry
         let tx = TransactionRequest::default()
@@ -105,7 +101,7 @@ where
         Ok(())
     }
 
-    pub async fn deploy_multicall3(provider: P) -> ContractResult<()> {
+    pub async fn deploy_multicall3(provider: P) -> Result<(), HelperErrors> {
         debug!("deploying Multicall3...");
         // Fund Multicall3 deployer and deploy Multicall3
         let multicall3_code = provider.get_code_at(MULTICALL3_ADDRESS).await?;
@@ -127,7 +123,7 @@ where
         Ok(())
     }
 
-    pub async fn deploy_safe_suites(provider: P) -> ContractResult<()> {
+    pub async fn deploy_safe_suites(provider: P) -> Result<(), HelperErrors> {
         debug!("deploying Safe contracts...");
 
         // Check if safe suite has been deployed. If so, skip this step
@@ -150,7 +146,9 @@ where
                     .await?
                     .get_receipt()
                     .await?;
-                tx.contract_address.unwrap()
+                tx.contract_address.ok_or_else(|| {
+                    HelperErrors::UnableToParseAddress("Failed to get contract address from receipt".to_string())
+                })?
             };
             debug!("Safe diamond proxy singleton {:?}", safe_diamond_proxy_address);
 
@@ -236,7 +234,10 @@ where
     }
 
     /// Deploys testing environment (with dummy network registry proxy) via the given provider.
-    async fn inner_deploy_common_contracts_for_testing(provider: P, deployer: &ChainKeypair) -> ContractResult<Self> {
+    async fn inner_deploy_common_contracts_for_testing(
+        provider: P,
+        deployer: &ChainKeypair,
+    ) -> Result<Self, HelperErrors> {
         // Pre-deploy common contracts
         ContractInstances::deploy_erc1820_registry(provider.clone()).await?;
         ContractInstances::deploy_multicall3(provider.clone()).await?;
@@ -333,7 +334,7 @@ where
     }
 
     /// Deploys testing environment (with dummy network registry proxy) via the given provider.
-    pub async fn deploy_for_testing(provider: P, deployer: &ChainKeypair) -> ContractResult<Self> {
+    pub async fn deploy_for_testing(provider: P, deployer: &ChainKeypair) -> Result<Self, HelperErrors> {
         let instances = Self::inner_deploy_common_contracts_for_testing(provider.clone(), deployer).await?;
 
         Ok(Self { ..instances })
@@ -464,7 +465,9 @@ mod tests {
 
         // get contract addresses from contracts-addresses.json in the parent directory
         let binding_dir = std::env::current_dir()?;
-        let contract_root = binding_dir.to_str().unwrap();
+        let contract_root = binding_dir.to_str().ok_or_else(|| {
+            HelperErrors::UnableToParseAddress("Failed to convert binding directory to string".to_string())
+        })?;
         let contract_environment_config_path =
             PathBuf::from(OsStr::new(contract_root)).join("contracts-addresses.json");
         debug!(
