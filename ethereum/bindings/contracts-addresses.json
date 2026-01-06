@@ -19,7 +19,7 @@
     "rotsee": {
       "addresses": {
         "announcements": "0x225b4b6FFe08228db1182946b5F9e905f1A19A4D",
-        "channels": "0x5bD809bDBAa8D3d5f37743Ae86BFef766dEE56b6",
+        "channels": "0x69E63A01a2209F733C83ECa619ddDa2BEA4d5Cdf",
         "module_implementation": "0x1167FB204298799B0B9E98896D58958cAEd164B0",
         "node_safe_migration": "0x74dfCdF50340b772696cAeF3F3Bc4cD776D37E8A",
         "node_safe_registry": "0x0e4e1a2D851663462523bF38Ca56259aceCCBc76",
@@ -35,7 +35,7 @@
     "debug-staging": {
       "addresses": {
         "announcements": "0x060DbC55867f0FFc20E69f9273113AeB90F4d049",
-        "channels": "0x7a33eb3900DB3e02A4C149E49dBc1F0359921B16",
+        "channels": "0x55271288D8c0Ba3B2fF2D55BDc5FdafEe6188732",
         "module_implementation": "0x3b008Cb90D252b731ceB8952a6Ed78B84Ab31Ea3",
         "node_safe_migration": "0x593eA8942E8b1D36F7714a15D43b5914DEF7B449",
         "node_safe_registry": "0x7b8E16ADa4720EB87b8000B9D5700EebbB6b1b5C",
