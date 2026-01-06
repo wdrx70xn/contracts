@@ -18,7 +18,7 @@
     },
     "rotsee": {
       "addresses": {
-        "announcements": "0x5afe60f4f74159f8F68dadCE6202b938cDa80Dad",
+        "announcements": "0x225b4b6FFe08228db1182946b5F9e905f1A19A4D",
         "channels": "0x5bD809bDBAa8D3d5f37743Ae86BFef766dEE56b6",
         "module_implementation": "0x1167FB204298799B0B9E98896D58958cAEd164B0",
         "node_safe_migration": "0x74dfCdF50340b772696cAeF3F3Bc4cD776D37E8A",
@@ -34,7 +34,7 @@
     },
     "debug-staging": {
       "addresses": {
-        "announcements": "0x191Ee0D1494eB159A5F758bC7c05E434cFaFF6e1",
+        "announcements": "0x060DbC55867f0FFc20E69f9273113AeB90F4d049",
         "channels": "0x7a33eb3900DB3e02A4C149E49dBc1F0359921B16",
         "module_implementation": "0x3b008Cb90D252b731ceB8952a6Ed78B84Ab31Ea3",
         "node_safe_migration": "0x593eA8942E8b1D36F7714a15D43b5914DEF7B449",
