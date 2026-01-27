@@ -15,9 +15,9 @@ https://github.com/hoprnet/contracts/tree/main
 ```
 
 The Git commit hash under audit is:
-TODO: update the commit
+
 ```
-f20e65546430337de68567c690e5b50b15ac6008
+105037c754c2a61a6f49cbebcb16f01cdc910e62
 ```
 
 All smart contracts can be found within the folder:
@@ -28,10 +28,10 @@ ethereum/contracts/src
 
 For convenience, the following link points to the source folder using the
 correct version:
-TODO: update the commit
+
 
 ```
-https://github.com/hoprnet/contracts/tree/f20e65546430337de68567c690e5b50b15ac6008/ethereum/contracts/src
+https://github.com/hoprnet/contracts/tree/105037c754c2a61a6f49cbebcb16f01cdc910e62/ethereum/contracts/src
 ```
 
 Specifically, the following contracts are within the scope of the audit:
