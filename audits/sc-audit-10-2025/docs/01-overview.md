@@ -1,21 +1,21 @@
 ## Introduction
 
 This documents provides an overview of the HOPR smart contracts as the basis for
-the smart contracts audit in 08/2024. It describes the relevant threat model,
+the smart contracts audit in 01/2025. It describes the relevant threat model,
 sets the scope, gives a high-level description of the relevant smart contracts
 and their relation and ABIs. Moreover, it provides pointers to the source code
 and steps on how to run tests and other operations on it.
 
 ## Scope
 
-All HOPR smart contracts can be found in the hoprnet monorepo, of branch `smart-contract-v3`:
+All HOPR smart contracts can be found in the hoprnet/contracts repository, of branch `main`:
 
 ```
-https://github.com/hoprnet/hoprnet/tree/smart-contract-v3
+https://github.com/hoprnet/contracts/tree/main
 ```
 
 The Git commit hash under audit is:
-
+TODO: update the commit
 ```
 f20e65546430337de68567c690e5b50b15ac6008
 ```
@@ -28,42 +28,32 @@ ethereum/contracts/src
 
 For convenience, the following link points to the source folder using the
 correct version:
+TODO: update the commit
 
 ```
-https://github.com/hoprnet/hoprnet/tree/f20e65546430337de68567c690e5b50b15ac6008/ethereum/contracts/src
+https://github.com/hoprnet/contracts/tree/f20e65546430337de68567c690e5b50b15ac6008/ethereum/contracts/src
 ```
 
 Specifically, the following contracts are within the scope of the audit:
 
 ```bash
+├── Announcements.sol # Announce nodes' multiaddress and key-bindings 
 ├── Channels.sol # payment channels between nodes in the HOPR network
-├── Crypto.sol # cryptographic primitives used by the HOPR protocol
+├── Crypto.sol # crypto primitives
+├── Ledger.sol # snapshot-based indexing of Hopr Channels
 ├── MultiSig.sol # abstraction of interaction between nodes and Safes in the HOPR network
-├── interfaces
-│   ├── IAvatar.sol # interface for Avatar (Safe).
-│   ├── INetworkRegistryRequirement.sol # interface for logics used in "network registry"
-│   ├── INodeManagementModule.sol # interface for node management Module
-│   └── INodeSafeRegistry.sol # interface for node safe registry
+├── TicketPriceOracle.sol # oracle for network ticket price 
+├── WinningProbabilityOracle.sol # oracle for network minimum winnning probability
 ├── node-stake
-│   ├── NodeSafeRegistry.sol # registry for nodes and Safes in the HOPR network
+│   ├── migration
+│       ├── NodeSafeMigration.sol # registry for nodes and Safes in the HOPR network
+│   ├── NodeSafeRegistry.sol # ledger to register the association of nodes and safes
 │   ├── NodeStakeFactory.sol # factory contract to deploy Safe and node management Module for node runners
 │   └── permissioned-module
 │       ├── CapabilityPermissions.sol # library for capability management of node management Module
-│       ├── NodeManagementModule.sol # implementation logics for node management Module
-│       └── SimplifiedModule.sol # simplified implementation of Module
-├── utils
-│   ├── EnumerableStringSet.sol # enumerable sets for String type
-│   ├── EnumerableTargetSet.sol # enumerable sets for Target type
-│   ├── SafeSuiteLib.sol # deployment addresses for Safe v.1.4.1
-│   └── TargetUtils.sol # utilities for Target type
-├── Announcements.sol # node announcement scheme which is independent from staking
-├── Ledger.sol # snapshot-based indexing of Hopr Channels
-├── NetworkRegistry.sol # implements network gate which will be removed eventually
-├── TicketPriceOracle.sol # standalone oracle to change HOPR ticket price network-wide
-└── proxy # implementations of adapters between network registry and staking
-    ├── DummyProxyForNetworkRegistry.sol
-    ├── SafeProxyForNetworkRegistry.sol
-    └── StakingProxyForNetworkRegistry.sol
+│       └── NodeManagementModule.sol # implementation logics for node management Module
+└── utils
+    └── EnumerableKeyBindingSet.sol # enumerable sets for types related to key-bindings
 ```
 
 There are some known issues that have been discovered and documented [here](https://github.com/hoprnet/hoprnet/issues/5501).
@@ -74,30 +64,38 @@ However, not all of these were addressed prior to the time of the audit.
 The following contracts are out of scope:
 
 ```bash
-└── static # existing contracts which will not be updated
-    ├── EnumerableStringSet.sol
-    ├── ERC777
-    │   └── ERC777Snapshot.sol
-    ├── HoprDistributor.sol
-    ├── HoprForwarder.sol
-    ├── HoprToken.sol
-    ├── HoprWrapper.sol
-    ├── HoprWrapperProxy.sol
-    ├── openzeppelin-contracts
-    │   ├── ERC777.sol
-    │   └── README.md
-    └── stake
-        ├── HoprBoost.sol
-        ├── HoprStake.sol
-        ├── HoprStake2.sol
-        ├── HoprStakeBase.sol
-        ├── HoprStakeSeason3.sol
-        ├── HoprStakeSeason4.sol
-        ├── HoprStakeSeason5.sol
-        ├── HoprStakeSeason6.sol
-        ├── HoprStakeSeason7.sol
-        ├── HoprWhitehat.sol
-        └── IHoprBoost.sol
+├── static # existing contracts which will not be updated
+│   ├── stake
+│       ├── mocks
+│           ├── ERC777Mock.sol
+│           └── ERC677Mock.sol
+│       ├── HoprStakeSeason8.sol
+│       ├── HoprStake2.sol
+│       ├── HoprWhitehat.sol
+│       ├── HoprBoost.sol
+│       ├── IHoprBoost.sol
+│       ├── HoprStakeBase.sol
+│       ├── HoprStake.sol
+│       ├── HoprStakeSeason3.sol
+│       ├── HoprStakeSeason7.sol
+│       ├── HoprStakeSeason6.sol
+│       ├── HoprStakeSeason4.sol
+│       └── HoprStakeSeason5.sol
+│   ├── proxy
+│       ├── StakingProxyForNetworkRegistry.sol
+│       ├── SafeProxyForNetworkRegistry.sol
+│       └── DummyProxyForNetworkRegistry.sol
+│   ├── HoprWrapperProxy.sol
+│   ├── HoprToken.sol
+│   ├── HoprWrapper.sol
+│   ├── ERC777
+│       └── ERC777Snapshot.sol
+│   ├── HoprDistributor.sol
+│   ├── HoprForwarder.sol
+│   ├── NetworkRegistry.sol
+│   ├── openzeppelin-contracts
+│       ├── README.md
+│       └── ERC777.sol
 ```
 
 ## Concepts
@@ -107,39 +105,6 @@ concepts for this audit are the `Incentivization Mechanism` and `Staking`. Other
 concepts, while using smart contracts, don't touch funds or have limited impact
 on the operation of the protocol which is why they are not in the scope of the
 audit.
-
-### Staking
-
-The higher-level goals of the staking design are (1) to decouple management of funds from the
-operation of a node, (2) have the option of co-signing transactions for higher
-security and (3) reduce the impact of compromised nodes on the user's funds.
-
-Fundamentally, authorization of various actions is split amont 3 private keys.
-Through this separation of concerns each private key has only a single area of
-functionality where its being used which is distinct from the other keys,
-reducing the surface area of attacks and making general recovery of the entire staking account easier.
-
-#### Private Keys
-
-Packet Key
-: An ed25519 key which is used by a single node. It is generated by
-the node itself at initialization of the node. The packet key is used for
-HOPR packet-related cryptographic operations.
-
-Chain Key
-: An secp256k1 key which is used by a single node. It is generated by
-the node itself at initialization of the node. The chain key is used for any
-on-chain operation of the node. In wallet-terms it may be considered to be a
-hot wallet, because the node can use it at runtime without user interaction.
-
-Admin Key
-: An on-chain EOA or smart contract wallet which is used by a user
-to set up and manage their staking account.
-
-While the packet key is primarily used in the p2p interaction of the HOPR nodes,
-the chain keys and admin keys work together to safe-guard and perform actions on
-behalf of a user. The exact combination of those keys and actions depends on the
-security settings of a user which is described in detail later.
 
 #### Safe
 
@@ -316,67 +281,133 @@ incentiviation mechanism:
 Safe` and therefore full access to funds and authorization. In this case the
    attack is limited to the user's `Node Safe`.
 
-## Contracts
+## Contracts v4 vs v3
 
-The following is a short overview of each contract's purpose. Refer to the
-contract's source code for more documentation.
+Compared with the last audit conducted in 2024, the current version of HOPR smart contracts
+(i.e. version 4, noted as "v4" for short) has done the following high-level changes:
+1. Introduced token burning mechanism in key-binding process.
+2. Merged the creation and setup process for safe and node-stake module when onboarding new node runners.
+3. Introduced migration contract for upgrading Safe implementation, and deploy new v4 module.
+4. Bumped dependencies version and solc version in all the contracts
 
-### CapabilityPermissions.sol
+### Key-binding and announcement
 
-Definition and verification of capabilities and permissions for nodes.
+`HoprAnnouncements` is an Ownable and UUPS-upgradeable contract that publishes transport-layer metadata for HOPR nodes.
+It maintains:
+1. an append-only key-binding registry (`_keyBindings`) that maps an ed25519 public key (offchain key) to a tuple `{ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, chain_key(address)}` with a monotonically increasing key id (bounded to `uint32` / `[0, 2^32-1]` via the library)
+2. a mapping from a secp256k1 chain-key (node address) to an optional base multiaddress (`multiaddrOf`).
+Key bindings are idempotent re-binding an existing off-chain pubkey returns the existing id and does not overwrite/reuse ids.
+Announcement is also idempotent: re-announcing the same multiaddr is a no-op.
 
-### Channels.sol
+Key binding is primarily performed through the ERC777 `tokensReceived` hook:
+Each new key binding burns some wxHOPR tokens, which is charged as "key-binding fee".
+The contract only accepts the configured `TOKEN` (wxHOPR). `userData` must ABI-decode to `(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, baseMultiaddr)`;
+the sender must be either the node itself (if no Safe exists) or the node’s associated Safe from `HoprNodeSafeRegistry` (enforced via `HoprMultiSig`/`registry.nodeToSafe`). 
+If the binding is new, `amount` must equal `keyBindingFee`; if the key already exists, `amount` must be zero (otherwise revert).
+After optional announcement (if `baseMultiaddr` non-empty), any positive `amount` is burned via `TOKEN.burn(amount, "")`.
+The contract explicitly does NOT verify EdDSA signatures on-chain (noted as off-chain verification).
 
-Implementation of HOPR payment channels.
+Announcements/revocations can be done separately via:
+- `announce()`/`revoke()` (only when no Safe is set), or
+- `announceSafe(selfAddress, ...)`/`revokeSafe(selfAddress)` (only callable by the associated Safe).
 
-### Crypto.sol
+`updateKeyBindingFee()` is owner-only; upgrades are owner-authorized via `_authorizeUpgrade`.
+The contract emits indexed events for key bindings, address announcements, revocations, and fee updates.
+It exposes view helpers to enumerate key bindings, query by pubkey, and fetch bindings by key id (with `getAllKeyBindings()` marked as gas-expensive).
 
-Bundles cryptographic primitives used by other contracts.
 
-### EnumerableStringSet.sol
+### Channels
 
-Adaptation of OpenZeppelin's EnumerableSet library for `string` type.
+The main logic of Channels contract remains the same as in the previous version (v3).
+The main changes are:
+- The storage layout has been re-ordered.
+- All the events emit the updated state of channels with `_channelState(channelId)`.
+- `EfficientHashLib.hash` replaces `keccak256(abi.encode(...))`
 
-### EnumerableTargetSet.sol
+### Crypto
 
-Adaptation of OpenZeppelin's EnumerableSet and EnumerableMap (`AddressToUintMap`)
-libraries for `TargetDefaultPermissions` type.
+The main logic of Channels contract remains the same as in the previous version (v3).
+The main changes are:
+- Free memory space used by the pointer in `expandMessageXMDKeccak256()` to address https://github.com/hoprnet/hoprnet/issues/6461
+- Use `INDEX_SNAPSHOT_INTERVAL = 1 days` as default `SNAPSHOT_INTERVAL` in inherited contracts
 
-### IAvatar.sol
+### Ledger
 
-Interface for Avatar (Safe). Slightly enhanced version based on the original
-from Safe.
+The main logic of Channels contract remains the same as in the previous version (v3).
+The main changes are:
+- Added view function for `latestRoot()`
+- `EfficientHashLib.hash` replaces `keccak256(abi.encode(...))`
+- Updated default `SNAPSHOT_INTERVAL`
 
-### INodeManagementModule.sol
+### NodeSafeMigration
 
-Interface for custom functions exposed by the `HoprNodeManagementModule`
-contract.
+`HoprNodeSafeMigration` is a migration helper meant to be delegatecalled from a Gnosis Safe.
+It targets migrating:
+- a HOPR “Node Safe” from an older Safe implementation to a newer L2-compatible singleton, and/or
+- upgrading/replacing the Safe’s enabled HOPR module.
+The contract stores two immutables: `MODULE_SINGLETON` (new module implementation/singleton address) and `FACTORY_ADDRESS` (HoprNodeStakeFactory used to deploy new module proxies). 
+Each NodeSafeMigration contract will upgrade safe and modules to their dedicated implementations.
 
-### INodeSafeRegistry.sol
+All externally callable actions are gated by `onlyDelegateCall` and, when operating on an existing module, `onlyEnabledModule(moduleProxy)` which checks (a) the Safe has the module enabled via `IAvatar(address(this)).isModuleEnabled` and (b) the module proxy’s `owner()` is the Safe (`IOwner(moduleProxy).owner() == address(this)`), otherwise reverting with `ModuleNotEnabledInSafe`.
+`migrateModuleSingleton` upgrades an existing upgradeable module proxy by having the Safe (as owner) call `upgradeToAndCall(MODULE_SINGLETON, data)` on the module, emitting `ChangedModuleImplementation`.
 
-Minimum interface for `NodeSafeRegistry` contract.
+`migrateSafeV141ToL2AndMigrateToUpgradeableModule` performs a combined migration: it calls `migrateL2Singleton()` (Safe impl migration) then sets the Safe fallback handler to `SAFE_FALLBACK_HANDLER`.
+It also best-effort sets the Safe as the ERC1820 implementer for `ERC777TokensRecipient` by calling the known ERC1820 registry via `execute(...)` and explicitly ignores failure.
+It then deploys a new module proxy via `IHoprNodeStakeFactory(FACTORY_ADDRESS).deployModule(safe, defaultTarget, nonce)`, bulk-includes `nodes`, enables the new module on the Safe, and disables the old module (passing `(newModuleProxy, oldModuleProxy)` to `disableModule`).
+`deployNewV4Module` is a lighter path that just deploys, then includes nodes, and then enables the new module without disabling the old one, emitting `DeployedNewV4Module`.
 
-### NodeManagementModule.sol
+### NodeSafeRegistry
 
-Permissioned capability-based Safe module for checking HOPR nodes operations.
+- Removed `ensureNodeIsSafeModuleMember(address safeAddress, address nodeChainKeyAddress)` function and all the checks invoking this function.
 
-### NodeSafeRegistry.sol
+### NodeStakeFactory
 
-Registry to set up a trusted link from a HOPR node to a HOPR safe, such
-that a HOPR node is only used by a single HOPR safe at a time.
+`HoprNodeStakeFactory` is an Ownable2Step factory that deploys:
+- 1-of-n Gnosis Safe proxy (Safe v1.4.1 tooling) and
+- a UUPS-style module proxy (`ERC1967Proxy` deployed via `CREATE2`) used for HOPR node management.
 
-### NodeStakeFactory.sol
+It tracks deployments in an enumerable set (`_safeModule`) keyed by Safe proxy address, exposing `getAllDeployments`, `isSafeDeployedByFactory`, and lookup-by-index/address helpers.
+The owner can update the module singleton address, Safe library addresses (Safe singleton, proxy factory, fallback handler, multisend), default HOPR network params (token, default allowance, default announcement target), and can reclaim arbitrary ERC20 balances held by the factory.
 
-The deployment and initialization of a HOPR staking safe is performed through
-this factory contract.
+The factory is also an ERC777 recipient registered in ERC1820.
+Upon receiving wxHOPR tokens with adequate `userData`, it deploys safe and module with optional inclusion of nodes.
+The `userData` must decode to `(functionIdentifier, nonce, defaultTarget, admins)` where `functionIdentifier` selects between two internal flows: `_deploySafeAndModule` or `_deploySafeAndModuleAndIncludeNodes`, any other identifier reverts.
+After deploying, the received ERC20 tokens are forwarded to the newly created Safe.
+Admin validation enforces at least one admin and forbids using the factory address as an admin.
+Internally, the factory temporarily appends itself as an additional Safe owner (via inline assembly) so it can execute initial Safe transactions, and later removes itself.
 
-### SimplifiedModule.sol
+Deployment flow: `_deploySafe` creates a Safe proxy via `SafeProxyFactory.createProxyWithNonce` and initializes it with `setup(admins, threshold=1, fallbackHandler, ...)`.
+`_deployModule` deterministically deploys an `ERC1967Proxy` using `Create2.deploy` with salt `keccak256(caller, nonce)`, initializing the module with `(safeProxy, multisend, defaultAnnouncementTarget, defaultTarget)` via `initialize(bytes)`.
+The factory then uses `Safe.execTransaction` with an EIP-1271-style precomputed signature (`approvalHashSig`) to queue/configure the Safe:
+- set ERC1820 `ERC777TokensRecipient` implementer to the Safe itself
+- enable the module
+- approve the “channels”/target contract (derived from `defaultTarget`) to spend tokens up to `defaultTokenAllowance`
+- optionally call `includeNodes(admins)` on the module (second flow)
+- remove the factory from the Safe owners. 
 
-Adaptation of Zodiac's `Module.sol`, removing unused functionality.
+The contract also provides `predictSafeAddress` and `predictModuleAddress` helpers to precompute deterministic deployment addresses.
 
-### TargetUtils.sol
 
-Helper functions for operations on `Target`s.
+### CapabilityPermissions
+
+- Reordered storage layout
+
+### NodeManagementModule
+
+- Reordered storage layout
+- Added `_defaultAnnouncementTarget` in `initialize()` to configure Announcement contract as target in modules.
+- Make `addNode`, `addNodes`, and `includeNodes` functions payable to allow funding nodes with native tokens while being included in the module
+
+### EnumerableKeyBindingSet.sol
+
+Helper functions for operations on `KeyBindingWithSignature`s, `KeyBindingWithSignatureTimestamp`s, and `KeyBindingSet`.
+
+### Other contracts
+
+The following changes have been applied:
+- Bump solc version to `0.8.30`
+- Some contracts include `Ownable`, or `Ownable2Step` (for two-step ownership transfer).
+- `EfficientHashLib.hash` replaces `keccak256(abi.encode(...))`
 
 ## Testing
 
@@ -385,18 +416,6 @@ tests. These tests use `forge` and may be executed by running the following
 commands:
 
 ```bash
-make deps
 cd ethereum/contracts
-make sc-test
-```
-
-The configuration of `forge`, e.g. fuzzy tester runs, may be changed in
-`ethereum/contracts/foundry.toml`.
-
-Coverage reports can be generated as well:
-
-```bash
-cd ethereum/contracts
-make sc-audit-coverage
-firefox report/index.html
+just smart-contract-test
 ```
