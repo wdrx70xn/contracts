@@ -1,3 +1,8 @@
+---
+layout: default
+title: Overview Audit 2024 Aug
+---
+
 ## Introduction
 
 This documents provides an overview of the HOPR smart contracts as the basis for
