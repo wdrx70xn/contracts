@@ -325,6 +325,8 @@ The main changes are:
 - The storage layout has been re-ordered.
 - All the events emit the updated state of channels with `_channelState(channelId)`.
 - `EfficientHashLib.hash` replaces `keccak256(abi.encode(...))`
+- Replaced `indexOffset` parameter with `BASE_INDEX_OFFSET` constant. Removal of `indexOffset` disables the aggregated ticket redemption.
+- Changed public immutable from `token` to `TOKEN`
 
 ### Crypto
 
