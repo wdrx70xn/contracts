@@ -77,8 +77,8 @@ contract DeployAllContractsScript is
         // 3.2. TicketPriceOracle
         _deployHoprTicketPriceOracle(deployerAddress);
 
-        // 3.3. WinningProbabilityOracle, with a default value of 1.0
-        _deployHoprWinningProbabilityOracle(deployerAddress, WinProb.wrap(type(uint56).max));
+        // 3.3. WinningProbabilityOracle, with a default value of 0.0005
+        _deployHoprWinningProbabilityOracle(deployerAddress, WinProb.wrap(uint56(72_057_594_037_927_935)));
 
         // 3.4 HoprNodeManagementModule singleton
         _deployHoprNodeManagementModule();

@@ -6,45 +6,52 @@ These contracts power HOPR's privacy-preserving incentive framework.
 Main contracts are
 
 ```bash
+├── Announcements.sol            # Node announcement mechanism (independent of staking)
 ├── Channels.sol                 # Uni-directional payment channel contract
 ├── Crypto.sol                   # Cryptographic utility functions and primitives
 ├── MultiSig.sol                 # Multisig modifiers to enforce Safe-based node operations
-├── Announcements.sol            # Node announcement mechanism (independent of staking)
 ├── Ledger.sol                   # Snapshot-based index for HOPR Channels
-├── NetworkRegistry.sol          # Network access gate (deprecated and slated for removal)
 ├── TicketPriceOracle.sol        # Oracle to update HOPR ticket price across the network
-├── proxy                        # Adapters between the NetworkRegistry and staking modules
-│   ├── DummyProxyForNetworkRegistry.sol
-│   ├── SafeProxyForNetworkRegistry.sol
-│   └── StakingProxyForNetworkRegistry.sol
+├── WinningProbabilityOracle.sol # Oracle to update HOPR minimum winning probability across the network
+
 ├── interfaces                   # Solidity interfaces for contract interoperability
 │   ├── IAvatar.sol
 │   ├── INetworkRegistryRequirement.sol
 │   ├── INodeManagementModule.sol
 │   └── INodeSafeRegistry.sol
-├── node-stake                  # Node staking system built on Safe's Account-Abstraction design
-│   ├── NodeSafeRegistry.sol    # Registry mapping nodes to their Safe wallets
-│   ├── NodeStakeFactory.sol    # Factory contract to deploy and initialize node Safes
-│   └── permissioned-module     # Modules for Safe-based node management
+├── node-stake                           # Node staking system built on Safe's Account-Abstraction design
+│   ├── NodeSafeRegistry.sol             # Registry mapping nodes to their Safe wallets
+│   ├── NodeStakeFactory.sol             # Factory contract to deploy and initialize node Safes
+│   └── migration                        # Contracts for upgrading safe and/or modules
+│       └── NodeSafeMigration.sol        # Upgrade Safe to v1.5.0 and module to the dedicated version
+│   └── permissioned-module              # Modules for Safe-based node management
 │       ├── CapabilityPermissions.sol    # Defines capability-based permission rules
 │       ├── NodeManagementModule.sol     # Main module to manage nodes via a Safe
 │       └── SimplifiedModule.sol         # Lightweight version of the Node Management Module
 ├── utils                                # Shared utility libraries
-│   ├── EnumerableStringSet.sol       # Enumerable set for strings
+│   ├── EnumerableKeyBindingSet.sol   # Enumerable set for KeyBinding structs
+│   ├── EnumerableSafeModuleSet.sol   # Enumerable set for SafeModule structs
+│   ├── EnumerableStringSet.sol       # Enumerable set for strings
 │   ├── EnumerableTargetSet.sol       # Enumerable set for targets (addresses with metadata)
+│   └── SafeSuiteLibV141.sol          # Useful contract deployments of Safe v1.4.1
+│   └── SafeSuiteLibV150.sol          # Useful contract deployments of Safe v1.5.0
 │   └── TargetUtils.sol               # Helper functions for managing targets
 └── static                            # Legacy contracts (archived and not actively maintained)
-    ├── EnumerableStringSet.sol
-    ├── ERC777
-    │   └── ERC777Snapshot.sol
     ├── HoprDistributor.sol           # Contract for token distribution
     ├── HoprForwarder.sol             # Minimal forwarder for meta-transactions
     ├── HoprToken.sol                 # ERC20 token implementation for HOPR
     ├── HoprWrapper.sol               # Legacy wrapper contract
     ├── HoprWrapperProxy.sol          # Proxy for interacting with HoprWrapper
+    ├── NetworkRegistry.sol           # Legacy Network Registry contract
+    ├── ERC777
+    │   └── ERC777Snapshot.sol
     ├── openzeppelin-contracts
     │   ├── ERC777.sol
     │   └── README.md
+    ├── proxy                        # Adapters between the NetworkRegistry and staking modules
+    │   ├── DummyProxyForNetworkRegistry.sol
+    │   ├── SafeProxyForNetworkRegistry.sol
+    │   └── StakingProxyForNetworkRegistry.sol
     └── stake                         # Legacy staking contracts by season
         ├── HoprBoost.sol
         ├── HoprStake.sol
@@ -118,9 +125,10 @@ source .env
 FOUNDRY_PROFILE=staging NETWORK=debug-staging forge script --broadcast --verify --verifier sourcify script/DeployAll.s.sol:DeployAllContractsScript
 
 // This deploys contract to staging environment and verifies contracts on Gnosisscan
-FOUNDRY_PROFILE=staging NETWORK=rotsee forge script --broadcast \
+FOUNDRY_PROFILE=staging NETWORK=jura forge script --broadcast --slow \
    --verify --verifier etherscan --verifier-url "https://api.etherscan.io/v2/api?chainid=100" \
    --delay 30 --chain 100 --etherscan-api-key "${ETHERSCAN_API_KEY}" \
+   --priority-gas-price 0.001gwei --with-gas-price 0.002gwei \
    script/DeployAll.s.sol:DeployAllContractsScript
 ```
 
@@ -246,7 +254,7 @@ forge install safe-global/safe-contracts@eb93dbb0f62e2dc1b308ac4c110038062df0a8c
 5. In the "Dufour" network, node-staking safes use the implementation of `Safe.sol` v1.3 and node-staking modules use an undeclared version of the `NodeManagementModule.sol`.
    As the module proxies were created with a minimal proxy, where the implementation address was supplied at the deployment, and due to the fact that the module contract does not allow delegatecalls, it is not possible to migrate existing NodeManagementModules to a different implementation.
    The desired workflow should be that the owner of a module (i.e. the Safe contract to which the module is attached) MAY call a `migrate` function at its own will to change the implementation contract address to a different one.
-   As a result, the `NodeSafeMigration` contract is created as a supporting contract to faciliate process of:
+   As a result, the `NodeSafeMigration` contract is created as a supporting contract to facilitate the process of:
    - creating a new NodeManagementModule proxy instance that uses `NodeManagementModule.sol` v2.0.0
    - initiate the basic targets on the module instance (e.g. for Channels, Token, Announcement, Send). Channels, Tokens, and Announcement contracts should be already deployed and supplied in the `NodeSafeMigration` contract.
    - include nodes into the new module.
