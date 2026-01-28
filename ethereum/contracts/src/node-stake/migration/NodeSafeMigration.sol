@@ -52,6 +52,27 @@ abstract contract HoprNodeSafeMigrationEvents {
  * the SafeStorage.sol library. E.g. from Safe.sol version 1.4.1 to SafeL2.sol version 1.5.0
  *
  * The contract also supports migration of the module singleton address to a newer version.
+ *
+ * Migration process:
+ * 1. Before on-chain migration, node operation should redeem all the tickets and close all
+ * the channels. Then stop the node. This is to ensure that there are no pending operations
+ * that could be affected by the migration, as well as to retrieve all the stakes/claim all
+ * the tokens from open channels. Take a snapshot of the current state of the node, including:
+ *   - Node address
+ *   - Safe address
+ *   - Module address
+ * 2. Use the Safe address to delegate call the migrateSafeV141ToL2AndMigrateToUpgradeableModule
+ *    function, passing in the old module address, default target, nonce and list of node addresses.
+ *    This will migrate the Safe to the new implementation, set the fallback handler, deploy
+ *    a new module, enable the new module and disable the old module.
+ * 3. Verify that the migration was successful by checking:
+ *   - The Safe implementation address is updated to the new version
+ *   - The fallback handler is set to the new handler
+ *   - The new module is enabled in the Safe
+ *   - The old module is disabled in the Safe
+ *   - The new module has the correct list of node addresses
+ *   - Safe is the owner of the new module
+ *4. Restart the node with the new Safe and module contracts.
  */
 contract HoprNodeSafeMigration is HoprNodeSafeMigrationEvents, SafeMigration, Executor {
     // The address of the ERC1820 registry contract

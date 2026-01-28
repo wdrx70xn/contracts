@@ -29,7 +29,6 @@ ethereum/contracts/src
 For convenience, the following link points to the source folder using the
 correct version:
 
-
 ```
 https://github.com/hoprnet/contracts/tree/105037c754c2a61a6f49cbebcb16f01cdc910e62/ethereum/contracts/src
 ```
@@ -37,12 +36,12 @@ https://github.com/hoprnet/contracts/tree/105037c754c2a61a6f49cbebcb16f01cdc910e
 Specifically, the following contracts are within the scope of the audit:
 
 ```bash
-├── Announcements.sol # Announce nodes' multiaddress and key-bindings 
+├── Announcements.sol # Announce nodes' multiaddress and key-bindings
 ├── Channels.sol # payment channels between nodes in the HOPR network
 ├── Crypto.sol # crypto primitives
 ├── Ledger.sol # snapshot-based indexing of Hopr Channels
 ├── MultiSig.sol # abstraction of interaction between nodes and Safes in the HOPR network
-├── TicketPriceOracle.sol # oracle for network ticket price 
+├── TicketPriceOracle.sol # oracle for network ticket price
 ├── WinningProbabilityOracle.sol # oracle for network minimum winnning probability
 ├── node-stake
 │   ├── migration
@@ -285,6 +284,7 @@ Safe` and therefore full access to funds and authorization. In this case the
 
 Compared with the last audit conducted in 2024, the current version of HOPR smart contracts
 (i.e. version 4, noted as "v4" for short) has done the following high-level changes:
+
 1. Introduced token burning mechanism in key-binding process.
 2. Merged the creation and setup process for safe and node-stake module when onboarding new node runners.
 3. Introduced migration contract for upgrading Safe implementation, and deploy new v4 module.
@@ -294,20 +294,22 @@ Compared with the last audit conducted in 2024, the current version of HOPR smar
 
 `HoprAnnouncements` is an Ownable and UUPS-upgradeable contract that publishes transport-layer metadata for HOPR nodes.
 It maintains:
+
 1. an append-only key-binding registry (`_keyBindings`) that maps an ed25519 public key (offchain key) to a tuple `{ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, chain_key(address)}` with a monotonically increasing key id (bounded to `uint32` / `[0, 2^32-1]` via the library)
 2. a mapping from a secp256k1 chain-key (node address) to an optional base multiaddress (`multiaddrOf`).
-Key bindings are idempotent re-binding an existing off-chain pubkey returns the existing id and does not overwrite/reuse ids.
-Announcement is also idempotent: re-announcing the same multiaddr is a no-op.
+   Key bindings are idempotent re-binding an existing off-chain pubkey returns the existing id and does not overwrite/reuse ids.
+   Announcement is also idempotent: re-announcing the same multiaddr is a no-op.
 
 Key binding is primarily performed through the ERC777 `tokensReceived` hook:
 Each new key binding burns some wxHOPR tokens, which is charged as "key-binding fee".
 The contract only accepts the configured `TOKEN` (wxHOPR). `userData` must ABI-decode to `(nodeAddress, ed25519_sig_0, ed25519_sig_1, ed25519_pub_key, baseMultiaddr)`;
-the sender must be either the node itself (if no Safe exists) or the node’s associated Safe from `HoprNodeSafeRegistry` (enforced via `HoprMultiSig`/`registry.nodeToSafe`). 
+the sender must be either the node itself (if no Safe exists) or the node’s associated Safe from `HoprNodeSafeRegistry` (enforced via `HoprMultiSig`/`registry.nodeToSafe`).
 If the binding is new, `amount` must equal `keyBindingFee`; if the key already exists, `amount` must be zero (otherwise revert).
 After optional announcement (if `baseMultiaddr` non-empty), any positive `amount` is burned via `TOKEN.burn(amount, "")`.
 The contract explicitly does NOT verify EdDSA signatures on-chain (noted as off-chain verification).
 
 Announcements/revocations can be done separately via:
+
 - `announce()`/`revoke()` (only when no Safe is set), or
 - `announceSafe(selfAddress, ...)`/`revokeSafe(selfAddress)` (only callable by the associated Safe).
 
@@ -315,11 +317,11 @@ Announcements/revocations can be done separately via:
 The contract emits indexed events for key bindings, address announcements, revocations, and fee updates.
 It exposes view helpers to enumerate key bindings, query by pubkey, and fetch bindings by key id (with `getAllKeyBindings()` marked as gas-expensive).
 
-
 ### Channels
 
 The main logic of Channels contract remains the same as in the previous version (v3).
 The main changes are:
+
 - The storage layout has been re-ordered.
 - All the events emit the updated state of channels with `_channelState(channelId)`.
 - `EfficientHashLib.hash` replaces `keccak256(abi.encode(...))`
@@ -328,6 +330,7 @@ The main changes are:
 
 The main logic of Channels contract remains the same as in the previous version (v3).
 The main changes are:
+
 - Free memory space used by the pointer in `expandMessageXMDKeccak256()` to address https://github.com/hoprnet/hoprnet/issues/6461
 - Use `INDEX_SNAPSHOT_INTERVAL = 1 days` as default `SNAPSHOT_INTERVAL` in inherited contracts
 
@@ -335,6 +338,7 @@ The main changes are:
 
 The main logic of Channels contract remains the same as in the previous version (v3).
 The main changes are:
+
 - Added view function for `latestRoot()`
 - `EfficientHashLib.hash` replaces `keccak256(abi.encode(...))`
 - Updated default `SNAPSHOT_INTERVAL`
@@ -343,10 +347,11 @@ The main changes are:
 
 `HoprNodeSafeMigration` is a migration helper meant to be delegatecalled from a Gnosis Safe.
 It targets migrating:
+
 - a HOPR “Node Safe” from an older Safe implementation to a newer L2-compatible singleton, and/or
 - upgrading/replacing the Safe’s enabled HOPR module.
-The contract stores two immutables: `MODULE_SINGLETON` (new module implementation/singleton address) and `FACTORY_ADDRESS` (HoprNodeStakeFactory used to deploy new module proxies). 
-Each NodeSafeMigration contract will upgrade safe and modules to their dedicated implementations.
+  The contract stores two immutables: `MODULE_SINGLETON` (new module implementation/singleton address) and `FACTORY_ADDRESS` (HoprNodeStakeFactory used to deploy new module proxies).
+  Each NodeSafeMigration contract will upgrade safe and modules to their dedicated implementations.
 
 All externally callable actions are gated by `onlyDelegateCall` and, when operating on an existing module, `onlyEnabledModule(moduleProxy)` which checks (a) the Safe has the module enabled via `IAvatar(address(this)).isModuleEnabled` and (b) the module proxy’s `owner()` is the Safe (`IOwner(moduleProxy).owner() == address(this)`), otherwise reverting with `ModuleNotEnabledInSafe`.
 `migrateModuleSingleton` upgrades an existing upgradeable module proxy by having the Safe (as owner) call `upgradeToAndCall(MODULE_SINGLETON, data)` on the module, emitting `ChangedModuleImplementation`.
@@ -363,6 +368,7 @@ It then deploys a new module proxy via `IHoprNodeStakeFactory(FACTORY_ADDRESS).d
 ### NodeStakeFactory
 
 `HoprNodeStakeFactory` is an Ownable2Step factory that deploys:
+
 - 1-of-n Gnosis Safe proxy (Safe v1.4.1 tooling) and
 - a UUPS-style module proxy (`ERC1967Proxy` deployed via `CREATE2`) used for HOPR node management.
 
@@ -379,14 +385,14 @@ Internally, the factory temporarily appends itself as an additional Safe owner (
 Deployment flow: `_deploySafe` creates a Safe proxy via `SafeProxyFactory.createProxyWithNonce` and initializes it with `setup(admins, threshold=1, fallbackHandler, ...)`.
 `_deployModule` deterministically deploys an `ERC1967Proxy` using `Create2.deploy` with salt `keccak256(caller, nonce)`, initializing the module with `(safeProxy, multisend, defaultAnnouncementTarget, defaultTarget)` via `initialize(bytes)`.
 The factory then uses `Safe.execTransaction` with an EIP-1271-style precomputed signature (`approvalHashSig`) to queue/configure the Safe:
+
 - set ERC1820 `ERC777TokensRecipient` implementer to the Safe itself
 - enable the module
 - approve the “channels”/target contract (derived from `defaultTarget`) to spend tokens up to `defaultTokenAllowance`
 - optionally call `includeNodes(admins)` on the module (second flow)
-- remove the factory from the Safe owners. 
+- remove the factory from the Safe owners.
 
 The contract also provides `predictSafeAddress` and `predictModuleAddress` helpers to precompute deterministic deployment addresses.
-
 
 ### CapabilityPermissions
 
@@ -405,6 +411,7 @@ Helper functions for operations on `KeyBindingWithSignature`s, `KeyBindingWithSi
 ### Other contracts
 
 The following changes have been applied:
+
 - Bump solc version to `0.8.30`
 - Some contracts include `Ownable`, or `Ownable2Step` (for two-step ownership transfer).
 - `EfficientHashLib.hash` replaces `keccak256(abi.encode(...))`
