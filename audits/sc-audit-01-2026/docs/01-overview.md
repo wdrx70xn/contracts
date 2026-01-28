@@ -1,7 +1,12 @@
+---
+layout: default
+title: Overview Audit 2026 Jan
+---
+
 ## Introduction
 
 This documents provides an overview of the HOPR smart contracts as the basis for
-the smart contracts audit in 01/2025. It describes the relevant threat model,
+the smart contracts audit in 01/2026. It describes the relevant threat model,
 sets the scope, gives a high-level description of the relevant smart contracts
 and their relation and ABIs. Moreover, it provides pointers to the source code
 and steps on how to run tests and other operations on it.
@@ -17,7 +22,7 @@ https://github.com/hoprnet/contracts/tree/main
 The Git commit hash under audit is:
 
 ```
-105037c754c2a61a6f49cbebcb16f01cdc910e62
+d6e2b0c5f9ff543fa1533656376ade05047363c6
 ```
 
 All smart contracts can be found within the folder:
@@ -30,7 +35,7 @@ For convenience, the following link points to the source folder using the
 correct version:
 
 ```
-https://github.com/hoprnet/contracts/tree/105037c754c2a61a6f49cbebcb16f01cdc910e62/ethereum/contracts/src
+https://github.com/hoprnet/contracts/tree/d6e2b0c5f9ff543fa1533656376ade05047363c6/ethereum/contracts/src
 ```
 
 Specifically, the following contracts are within the scope of the audit:
@@ -42,7 +47,7 @@ Specifically, the following contracts are within the scope of the audit:
 ├── Ledger.sol # snapshot-based indexing of Hopr Channels
 ├── MultiSig.sol # abstraction of interaction between nodes and Safes in the HOPR network
 ├── TicketPriceOracle.sol # oracle for network ticket price
-├── WinningProbabilityOracle.sol # oracle for network minimum winnning probability
+├── WinningProbabilityOracle.sol # oracle for network minimum winning probability
 ├── node-stake
 │   ├── migration
 │       ├── NodeSafeMigration.sol # registry for nodes and Safes in the HOPR network
@@ -313,7 +318,7 @@ Announcements/revocations can be done separately via:
 - `announce()`/`revoke()` (only when no Safe is set), or
 - `announceSafe(selfAddress, ...)`/`revokeSafe(selfAddress)` (only callable by the associated Safe).
 
-`updateKeyBindingFee()` is owner-only; upgrades are owner-authorized via `_authorizeUpgrade`.
+`updateKeyBindingFee()` is owner-only; upgrades follow the UUPS pattern and are authorized via the `_authorizeUpgrade` hook, which enforces UUPS upgrade authorization by the owner.
 The contract emits indexed events for key bindings, address announcements, revocations, and fee updates.
 It exposes view helpers to enumerate key bindings, query by pubkey, and fetch bindings by key id (with `getAllKeyBindings()` marked as gas-expensive).
 

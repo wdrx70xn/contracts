@@ -72,7 +72,7 @@ abstract contract HoprNodeSafeMigrationEvents {
  *   - The old module is disabled in the Safe
  *   - The new module has the correct list of node addresses
  *   - Safe is the owner of the new module
- *4. Restart the node with the new Safe and module contracts.
+ * 4. Restart the node with the new Safe and module contracts.
  */
 contract HoprNodeSafeMigration is HoprNodeSafeMigrationEvents, SafeMigration, Executor {
     // The address of the ERC1820 registry contract
