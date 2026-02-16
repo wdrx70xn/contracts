@@ -16,7 +16,7 @@
       "environment_type": "local",
       "indexer_start_block_number": 1
     },
-    "rotsee": {
+    "jura": {
       "addresses": {
         "announcements": "0x225b4b6FFe08228db1182946b5F9e905f1A19A4D",
         "channels": "0x69E63A01a2209F733C83ECa619ddDa2BEA4d5Cdf",
@@ -48,7 +48,7 @@
       "environment_type": "staging",
       "indexer_start_block_number": 29690235
     },
-    "jura": {
+    "rotsee": {
       "addresses": {
         "announcements": "0xe08E8EfAc66c83a5e2cE9E0a696f8416A5AB6136",
         "channels": "0x81a79fcDe8FFE6452e51D8E0493B37C2a5a09c57",
