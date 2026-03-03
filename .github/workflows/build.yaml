@@ -49,4 +49,4 @@ jobs:
           persist-credentials: false
       - name: Build the workspace
         run: |
-          nix develop -c cargo build
+          nix build -L .#lib-contracts-x86_64-linux
