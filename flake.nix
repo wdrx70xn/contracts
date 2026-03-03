@@ -330,14 +330,14 @@
               test
               test-nightly
               docs
-              lib-contracts
-              lib-contracts-x86_64-linux
-              lib-contracts-x86_64-darwin
-              lib-contracts-aarch64-darwin
+              lib-bindings
+              lib-bindings-x86_64-linux
+              lib-bindings-x86_64-darwin
+              lib-bindings-aarch64-darwin
               ;
             inherit (anvilPackages) anvil-docker anvil-docker-upload;
             inherit pre-commit-check;
-            default = contractsPackages.lib-contracts;
+            default = contractsPackages.lib-bindings;
           };
 
           devShells.default = devShell;

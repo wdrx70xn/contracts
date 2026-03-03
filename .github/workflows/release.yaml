@@ -17,14 +17,14 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build-library:
-    name: Binary ${{ matrix.architecture }}
+    name: Lib ${{ matrix.architecture }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - architecture: x86_64-linux
             runner: self-hosted-hoprnet-bigger
-            build_command: nix build -L .#binary-blokli-x86_64-linux
+            build_command: nix build -L .#lib-bindings-x86_64-linux
     uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v2
     permissions:
       contents: read

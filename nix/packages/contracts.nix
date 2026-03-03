@@ -82,8 +82,8 @@ in
   docs = build builders.localNightly { buildDocs = true; };
 
   # Cross-compiled library packages
-  lib-contracts-x86_64-linux = build builders."x86_64-linux" { };
-  lib-contracts-x86_64-darwin = build builders."x86_64-darwin" { };
-  lib-contracts-aarch64-darwin = build builders."aarch64-darwin" { };
-  lib-contracts = build builders.local { };
+  lib-bindings-x86_64-linux = build builders."x86_64-linux" { };
+  lib-bindings-x86_64-darwin = build builders."x86_64-darwin" { };
+  lib-bindings-aarch64-darwin = build builders."aarch64-darwin" { };
+  lib-bindings = build builders.local { };
 }
