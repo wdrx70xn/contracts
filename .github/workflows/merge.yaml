@@ -27,7 +27,7 @@ jobs:
       cachix_cache_name: contracts
       build_file: ethereum/bindings/Cargo.toml
       build_command: ${{ matrix.build_command }}
-      binary: hopr-bindings
+      binary: hopr-contract-addresses
       runner: ${{ matrix.runner }}
     secrets:
       gcp_service_account: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
