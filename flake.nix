@@ -92,14 +92,21 @@
             foundryBin = pkgs.foundry-bin;
           };
 
+          # Linux packages for Docker image contents (always x86_64-linux for
+          # server deployment; this lets the image be built on Darwin too)
+          pkgsLinux = import nixpkgs { system = "x86_64-linux"; inherit overlays; };
+          linuxSolcDefault = solc.mkDefault pkgsLinux pkgsLinux.solc_0_8_30;
+
           # Import anvil Docker image and upload script packages
           anvilPackages = import ./nix/packages/anvil.nix {
             inherit
               pkgs
+              pkgsLinux
               lib
               solcDefault
+              linuxSolcDefault
               ;
-            foundryBin = pkgs.foundry-bin;
+            foundryBin = pkgsLinux.foundry-bin;
           };
 
           # Version extracted for check-bindings derivation

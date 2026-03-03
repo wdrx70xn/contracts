@@ -52,7 +52,7 @@ let
     pkg:
     pkg.overrideAttrs (old: {
       preConfigure =
-        old.preConfigure
+        (old.preConfigure or "")
         + ''
           sed "s|# solc = .*|solc = \"${solcDefault}/bin/solc\"|g" \
             ethereum/contracts/foundry.in.toml > \
