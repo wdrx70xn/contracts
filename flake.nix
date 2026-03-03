@@ -70,6 +70,9 @@
           pkgs = import nixpkgs { inherit localSystem overlays; };
           solcDefault = solc.mkDefault pkgs pkgs.solc_0_8_30;
 
+          # Platform information
+          buildPlatform = pkgs.stdenv.buildPlatform;
+
           # Import nix-lib for this system
           nixLib = nix-lib.lib.${system};
 
@@ -185,15 +188,29 @@
             doCheck = true;
           };
 
-          devShell = nixLib.mkDevShell {
-            rustToolchainFile = ./rust-toolchain.toml;
-            shellName = "HOPR Contracts";
+          # Rust toolchains
+          stableToolchain =
+            (pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override
+              {
+                targets = [
+                  (
+                    if buildPlatform.config == "arm64-apple-darwin" then
+                      "aarch64-apple-darwin"
+                    else
+                      buildPlatform.config
+                  )
+                ];
+              };
+
+          shellArgs = {
             treefmtWrapper = config.treefmt.build.wrapper;
-            treefmtPrograms = lib.attrValues config.treefmt.build.programs;
+            treefmtPrograms = pkgs.lib.attrValues config.treefmt.build.programs;
             shellHook = ''
+              echo "Running pre-commit checks..."
               ${pre-commit-check.shellHook}
+
               if ! grep -q "solc = \"${solcDefault}/bin/solc\"" ethereum/contracts/foundry.toml; then
-                echo "Generating foundry.toml file!"
+                echo "Generating foundry.toml file!" >&2
                 sed "s|# solc = .*|solc = \"${solcDefault}/bin/solc\"|g" \
                   ethereum/contracts/foundry.in.toml >| \
                   ethereum/contracts/foundry.toml
@@ -204,15 +221,20 @@
               solcDefault
               foundry-bin
               sqlite
-              nfpm
-              envsubst
               gnuplot
               zizmor
               yq-go
             ];
-            env = {
-              HOPR_INTERNAL_TRANSPORT_ACCEPT_PRIVATE_NETWORK_IP_ADDRESSES = "true";
-            };
+          };
+
+          shells = {
+            default = nixLib.mkDevShell (
+              {
+                rustToolchain = stableToolchain;
+                shellName = "Development";
+              }
+              // shellArgs
+            );
           };
         in
         {
@@ -341,7 +363,7 @@
             default = contractsPackages.lib-bindings;
           };
 
-          devShells.default = devShell;
+          devShells = shells;
 
           formatter = config.treefmt.build.wrapper;
         };
