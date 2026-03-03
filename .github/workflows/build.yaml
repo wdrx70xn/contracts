@@ -1,17 +1,14 @@
-################################################################################
-# Main pipeline to build the artifacts
-################################################################################
+#################################################################################
+##                      Pipeline to build on pull requests                     ##
+#################################################################################
 name: Build
 on:
-  merge_group:
-    types: [checks_requested]
-  pull_request_target:
+  pull_request:
     types:
       - opened
-      - ready_for_review
-      - reopened
-      - review_requested
       - synchronize
+      - reopened
+      - ready_for_review
 permissions:
   contents: write
   actions: write
@@ -20,33 +17,28 @@ concurrency:
   group: ${{ github.event.pull_request.head.ref || github.ref_name }}-build
   cancel-in-progress: true
 jobs:
-  docs:
-    name: Docs
-    uses: ./.github/workflows/build-docs.yaml
-    secrets: inherit
+  build-library:
+    name: Lib ${{ matrix.architecture }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64-linux
+            runner: self-hosted-hoprnet-bigger
+            build_command: nix build -L .#lib-contracts-x86_64-linux
+    uses: hoprnet/hopr-workflows/.github/workflows/build-binaries.yaml@build-binaries-v2
+    permissions:
+      contents: read
     with:
-      source_repo: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
-      publish: false
-  library:
-    name: Library
-    runs-on: self-hosted-hoprnet-bigger
-    timeout-minutes: 30
-    if: github.event.pull_request.draft == false
-    env:
-      CI: "true"
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
-        with:
-          disable-sudo: true
-          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
-      - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-          ref: ${{ github.event.pull_request.head.ref || github.ref }}
-          persist-credentials: false
-      - name: Build the workspace
-        run: |
-          nix build -L .#lib-contracts-x86_64-linux
+      version_type: "commit"
+      architecture: ${{ matrix.architecture }}
+      cachix_cache_name: "contracts"
+      build_file: "Cargo.toml"
+      build_command: ${{ matrix.build_command }}
+      binary: hopr-bindings
+      runner: ${{ matrix.runner }}
+    secrets:
+      gcp_service_account: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      gpg_private_key: ${{ secrets.GPG_HOPRNET_PRIVATE_KEY }}
