@@ -30,10 +30,10 @@ jobs:
       contents: read
     with:
       source_branch: ${{ github.ref }}
-      version_type: "release"
+      version_type: release
       architecture: ${{ matrix.architecture }}
-      cachix_cache_name: "contracts"
-      build_file: "Cargo.toml"
+      cachix_cache_name: contracts
+      build_file: ethereum/bindings/Cargo.toml
       build_command: ${{ matrix.build_command }}
       binary: hopr-bindings
       runner: ${{ matrix.runner }}
