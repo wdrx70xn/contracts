@@ -207,6 +207,7 @@
               nfpm
               envsubst
               gnuplot
+              zizmor
               yq-go
             ];
             env = {
