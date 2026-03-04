@@ -1,6 +1,6 @@
 # contracts.nix - HOPR contracts Rust package definitions
 #
-# Builds the hopr-bindings library for multiple platforms using nix-lib builders.
+# Builds the hopr-bindings crate for multiple platforms using nix-lib builders.
 # Source filtering, rev, and build arguments are all defined here.
 # The contracts-specific preConfigure generates foundry.toml from foundry.in.toml
 # (only for the main build; the deps-only build does not need it).
@@ -60,30 +60,42 @@ let
         '';
     });
 
-  build =
+  buildBinary =
     builder: args:
     withFoundryPreConfigure (builder.callPackage nixLib.mkRustPackage (buildArgs // args));
+
+  buildLib =
+    builder: args:
+    builder.callPackage nixLib.mkRustLibrary ({ inherit src depsSrc cargoToml rev; } // args);
 in
 {
-  build-dev = build builders.local {
+  build-dev = buildBinary builders.local {
     CARGO_PROFILE = "dev";
     cargoExtraArgs = "-F capture";
   };
 
-  clippy = build builders.local { runClippy = true; };
+  clippy = buildLib builders.local { runClippy = true; };
 
-  test = build builders.local { runTests = true; };
+  test = buildLib builders.local { runTests = true; };
 
-  test-nightly = build builders.localNightly {
+  test-nightly = buildLib builders.localNightly {
     runTests = true;
     cargoExtraArgs = "-Z panic-abort-tests";
   };
 
-  docs = build builders.localNightly { buildDocs = true; };
+  docs = buildBinary builders.localNightly { buildDocs = true; };
 
-  # Cross-compiled library packages
-  lib-bindings-x86_64-linux = build builders."x86_64-linux" { };
-  lib-bindings-x86_64-darwin = build builders."x86_64-darwin" { };
-  lib-bindings-aarch64-darwin = build builders."aarch64-darwin" { };
-  lib-bindings = build builders.local { };
+  # Cross-compiled binary packages
+  binary-x86_64-linux = buildBinary builders."x86_64-linux" { };
+  binary-x86_64-darwin = buildBinary builders."x86_64-darwin" { };
+  binary-aarch64-darwin = buildBinary builders."aarch64-darwin" { };
+  binary = buildBinary builders.local { };
+
+  # Cross-compiled rlib packages
+  # Artifacts are available at: ./result/lib/libhopr_bindings.rlib
+  lib-hopr-bindings-x86_64-linux = buildLib builders."x86_64-linux" { };
+  lib-hopr-bindings-x86_64-darwin = buildLib builders."x86_64-darwin" { };
+  lib-hopr-bindings-aarch64-darwin = buildLib builders."aarch64-darwin" { };
+  lib-hopr-bindings = buildLib builders.local { };
+
 }

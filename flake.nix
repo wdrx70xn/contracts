@@ -353,14 +353,18 @@
               test
               test-nightly
               docs
-              lib-bindings
-              lib-bindings-x86_64-linux
-              lib-bindings-x86_64-darwin
-              lib-bindings-aarch64-darwin
+              binary
+              binary-x86_64-linux
+              binary-x86_64-darwin
+              binary-aarch64-darwin
+              lib-hopr-bindings
+              lib-hopr-bindings-x86_64-linux
+              lib-hopr-bindings-x86_64-darwin
+              lib-hopr-bindings-aarch64-darwin
               ;
             inherit (anvilPackages) anvil-docker anvil-docker-upload;
             inherit pre-commit-check;
-            default = contractsPackages.lib-bindings;
+            default = contractsPackages.lib-hopr-bindings;
           };
 
           devShells = shells;
