@@ -209,7 +209,7 @@
               echo "Running pre-commit checks..."
               ${pre-commit-check.shellHook}
 
-              if ! grep -q "solc = \"${solcDefault}/bin/solc\"" ethereum/contracts/foundry.toml; then
+              if ! { [ -f ethereum/contracts/foundry.toml ] && grep -q "solc = \"${solcDefault}/bin/solc\"" ethereum/contracts/foundry.toml; }; then
                 echo "Generating foundry.toml file!" >&2
                 sed "s|# solc = .*|solc = \"${solcDefault}/bin/solc\"|g" \
                   ethereum/contracts/foundry.in.toml >| \
