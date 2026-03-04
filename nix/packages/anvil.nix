@@ -106,7 +106,7 @@ let
 
   anvil-docker-upload = pkgs.writeShellScriptBin "docker-image-upload" ''
     set -eu
-    OCI_ARCHIVE="$(nix build --no-link --print-out-paths ${anvil-docker})"
+    OCI_ARCHIVE="${anvil-docker}"
     ${pkgs.skopeo}/bin/skopeo copy --insecure-policy \
       --dest-registry-token="$GOOGLE_ACCESS_TOKEN" \
       "docker-archive:$OCI_ARCHIVE" "docker://$IMAGE_TARGET"
