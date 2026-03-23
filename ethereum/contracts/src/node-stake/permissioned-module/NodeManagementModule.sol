@@ -306,7 +306,11 @@ contract HoprNodeManagementModule is SimplifiedModule, IHoprNodeManagementModule
      * @param channelId The channelId of the scoped HoprChannels target.
      * @param encodedSigsPermissions The encoded function signatures and permissions
      */
-    function scopeChannelsCapabilities(address targetAddress, bytes32 channelId, bytes32 encodedSigsPermissions)
+    function scopeChannelsCapabilities(
+        address targetAddress,
+        bytes32 channelId,
+        bytes32 encodedSigsPermissions
+    )
         external
         onlyOwner
     {
@@ -343,7 +347,11 @@ contract HoprNodeManagementModule is SimplifiedModule, IHoprNodeManagementModule
      * @param beneficiary The beneficiary address for the scoped Send target.
      * @param permission The permission to be set for the specific function.
      */
-    function scopeSendCapability(address nodeAddress, address beneficiary, GranularPermission permission)
+    function scopeSendCapability(
+        address nodeAddress,
+        address beneficiary,
+        GranularPermission permission
+    )
         external
         onlyOwner
     {
@@ -358,7 +366,10 @@ contract HoprNodeManagementModule is SimplifiedModule, IHoprNodeManagementModule
      * @param functionSigs array of function signatures on target
      * @param permissions array of granular permissions on target
      */
-    function encodeFunctionSigsAndPermissions(bytes4[] memory functionSigs, GranularPermission[] memory permissions)
+    function encodeFunctionSigsAndPermissions(
+        bytes4[] memory functionSigs,
+        GranularPermission[] memory permissions
+    )
         external
         pure
         returns (bytes32 encoded, uint256 length)
@@ -371,7 +382,10 @@ contract HoprNodeManagementModule is SimplifiedModule, IHoprNodeManagementModule
      * @param encoded encode permissions in bytes32
      * @param length length of permissions
      */
-    function decodeFunctionSigsAndPermissions(bytes32 encoded, uint256 length)
+    function decodeFunctionSigsAndPermissions(
+        bytes32 encoded,
+        uint256 length
+    )
         external
         pure
         returns (bytes4[] memory functionSigs, GranularPermission[] memory permissions)
@@ -389,7 +403,12 @@ contract HoprNodeManagementModule is SimplifiedModule, IHoprNodeManagementModule
     /// @param data Data payload of module transaction
     /// @param operation Operation type of module transaction
     /// @notice Can only be called by enabled modules
-    function execTransactionFromModule(address to, uint256 value, bytes calldata data, Enum.Operation operation)
+    function execTransactionFromModule(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        Enum.Operation operation
+    )
         public
         nodeOnly
         returns (bool success)

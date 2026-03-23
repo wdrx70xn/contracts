@@ -12,7 +12,10 @@ library BoostUtilsLib {
      * hasIndex bool check if index is occupied
      * boostType string name of boost
      */
-    function getBoostTypeAtIndex(address hoprBoostAddr, uint256 index)
+    function getBoostTypeAtIndex(
+        address hoprBoostAddr,
+        uint256 index
+    )
         public
         view
         returns (bool hasIndex, string memory boostType)

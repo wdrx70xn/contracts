@@ -16,7 +16,12 @@ import { HoprNodeSafeRegistry } from "../src/node-stake/NodeSafeRegistry.sol";
 import { Enum, IAvatar } from "../src/interfaces/IAvatar.sol";
 
 abstract contract IFactory {
-    function clone(address moduleSingletonAddress, address[] memory admins, uint256 nonce, bytes32 defaultTarget)
+    function clone(
+        address moduleSingletonAddress,
+        address[] memory admins,
+        uint256 nonce,
+        bytes32 defaultTarget
+    )
         public
         virtual
         returns (address, address payable);
@@ -85,7 +90,11 @@ contract SingleActionFromPrivateKeyScript is Test, NetworkConfig {
      * @param safeAddress new safe addresses that nodes attach to
      * @param moduleAddress new module addresses that nodes attach to
      */
-    function moveNodesToSafeModule(address[] memory nodeAddresses, address safeAddress, address moduleAddress)
+    function moveNodesToSafeModule(
+        address[] memory nodeAddresses,
+        address safeAddress,
+        address moduleAddress
+    )
         external
     {
         // 1. get environment and msg.sender

@@ -392,7 +392,12 @@ library HoprCapabilityPermissions {
      * @param functionSig Function method ID
      * @param data payload (with function signature)
      */
-    function checkHoprTokenParameters(Role storage role, bytes32 capabilityKey, bytes4 functionSig, bytes memory data)
+    function checkHoprTokenParameters(
+        Role storage role,
+        bytes32 capabilityKey,
+        bytes4 functionSig,
+        bytes memory data
+    )
         internal
         view
         returns (GranularPermission)
@@ -427,7 +432,11 @@ library HoprCapabilityPermissions {
      * @param target Taret of the operation
      * @param functionSig bytes4 method Id of the operation
      */
-    function getDefaultPermission(uint256 dataLength, Target target, bytes4 functionSig)
+    function getDefaultPermission(
+        uint256 dataLength,
+        Target target,
+        bytes4 functionSig
+    )
         internal
         pure
         returns (TargetPermission)
@@ -710,7 +719,10 @@ library HoprCapabilityPermissions {
      * @param functionSigs array of function signatures on target
      * @param permissions array of granular permissions on target
      */
-    function encodeFunctionSigsAndPermissions(bytes4[] memory functionSigs, GranularPermission[] memory permissions)
+    function encodeFunctionSigsAndPermissions(
+        bytes4[] memory functionSigs,
+        GranularPermission[] memory permissions
+    )
         internal
         pure
         returns (bytes32 encoded, uint256 length)
@@ -745,7 +757,10 @@ library HoprCapabilityPermissions {
      * @param encoded encode permissions in bytes32
      * @param length length of permissions
      */
-    function decodeFunctionSigsAndPermissions(bytes32 encoded, uint256 length)
+    function decodeFunctionSigsAndPermissions(
+        bytes32 encoded,
+        uint256 length
+    )
         internal
         pure
         returns (bytes4[] memory functionSigs, GranularPermission[] memory permissions)
