@@ -38,22 +38,23 @@ let
     created = "now";
     # Use Linux packages for the container contents so the image can be built
     # on Darwin as well as Linux.
-    contents =
-      [ anvilSrc ]
-      ++ (with pkgsLinux; [
-        coreutils
-        curl
-        findutils
-        foundryBin
-        gnumake
-        jq
-        lsof
-        runtimeShellPackage
-        linuxSolcDefault
-        time
-        tini
-        which
-      ]);
+    contents = [
+      anvilSrc
+    ]
+    ++ (with pkgsLinux; [
+      coreutils
+      curl
+      findutils
+      foundryBin
+      gnumake
+      jq
+      lsof
+      runtimeShellPackage
+      linuxSolcDefault
+      time
+      tini
+      which
+    ]);
     fakeRootCommands = ''
       #!${pkgs.runtimeShell}
       set -euo pipefail

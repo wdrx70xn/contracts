@@ -97,7 +97,10 @@
 
           # Linux packages for Docker image contents (always x86_64-linux for
           # server deployment; this lets the image be built on Darwin too)
-          pkgsLinux = import nixpkgs { system = "x86_64-linux"; inherit overlays; };
+          pkgsLinux = import nixpkgs {
+            system = "x86_64-linux";
+            inherit overlays;
+          };
           linuxSolcDefault = solc.mkDefault pkgsLinux pkgsLinux.solc_0_8_30;
 
           # Import anvil Docker image and upload script packages
