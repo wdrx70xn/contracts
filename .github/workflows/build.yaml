@@ -9,10 +9,6 @@ on:
       - synchronize
       - reopened
       - ready_for_review
-permissions:
-  contents: write
-  actions: write
-  security-events: write
 concurrency:
   group: ${{ github.event.pull_request.head.ref || github.ref_name }}-build
   cancel-in-progress: true

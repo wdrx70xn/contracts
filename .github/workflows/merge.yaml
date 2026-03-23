@@ -1,10 +1,10 @@
-name: MergePR
+name: Merge
 on:
   pull_request:
     types:
       - closed
 concurrency:
-  group: merge
+  group: merge-${{ github.event.pull_request.base.ref }}
   cancel-in-progress: false
 jobs:
   build-library:
