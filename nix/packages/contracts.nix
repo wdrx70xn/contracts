@@ -37,7 +37,12 @@ let
   cargoToml = ./../../ethereum/bindings/Cargo.toml;
 
   buildArgs = {
-    inherit src depsSrc rev cargoToml;
+    inherit
+      src
+      depsSrc
+      rev
+      cargoToml
+      ;
     # foundryBin and solcDefault are required as native build tools
     extraNativeBuildInputs = [
       foundryBin
@@ -51,13 +56,11 @@ let
   withFoundryPreConfigure =
     pkg:
     pkg.overrideAttrs (old: {
-      preConfigure =
-        (old.preConfigure or "")
-        + ''
-          sed "s|# solc = .*|solc = \"${solcDefault}/bin/solc\"|g" \
-            ethereum/contracts/foundry.in.toml > \
-            ethereum/contracts/foundry.toml
-        '';
+      preConfigure = (old.preConfigure or "") + ''
+        sed "s|# solc = .*|solc = \"${solcDefault}/bin/solc\"|g" \
+          ethereum/contracts/foundry.in.toml > \
+          ethereum/contracts/foundry.toml
+      '';
     });
 
   buildBinary =
@@ -66,7 +69,17 @@ let
 
   buildLib =
     builder: args:
-    builder.callPackage nixLib.mkRustLibrary ({ inherit src depsSrc cargoToml rev; } // args);
+    builder.callPackage nixLib.mkRustLibrary (
+      {
+        inherit
+          src
+          depsSrc
+          cargoToml
+          rev
+          ;
+      }
+      // args
+    );
 in
 {
   build-dev = buildBinary builders.local {
