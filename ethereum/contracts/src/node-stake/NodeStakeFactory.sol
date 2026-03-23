@@ -33,7 +33,11 @@ abstract contract HoprNodeStakeFactoryEvents {
 }
 
 interface IHoprNodeStakeFactory {
-    function deployModule(address safeProxyAddr, bytes32 defaultTarget, uint256 nonce)
+    function deployModule(
+        address safeProxyAddr,
+        bytes32 defaultTarget,
+        uint256 nonce
+    )
         external
         returns (address moduleProxy);
 }
@@ -142,7 +146,11 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
      * @dev Constructor function to initialize contract state.
      * Initializes the encoded address of the contract's approver and the approved hash signature.
      */
-    constructor(address _moduleSingletonAddress, address _announcementAddress, address initialOwner)
+    constructor(
+        address _moduleSingletonAddress,
+        address _announcementAddress,
+        address initialOwner
+    )
         Ownable(initialOwner)
     {
         // Encode the contract's address to be used in EIP-1271 signature verification
@@ -325,7 +333,11 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
      * contract.
      * @return addresses of the deployed module proxy and safe proxy.
      */
-    function clone(uint256 nonce, bytes32 defaultTarget, address[] memory admins)
+    function clone(
+        uint256 nonce,
+        bytes32 defaultTarget,
+        address[] memory admins
+    )
         public
         returns (address, address payable)
     {
@@ -351,7 +363,11 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
      * @param nonce A nonce used to create a salt. Both the safe and module proxies share the same nonce.
      * @return moduleProxy The address of the deployed module proxy.
      */
-    function deployModule(address safeProxyAddr, bytes32 defaultTarget, uint256 nonce)
+    function deployModule(
+        address safeProxyAddr,
+        bytes32 defaultTarget,
+        uint256 nonce
+    )
         public
         returns (address moduleProxy)
     {
@@ -605,7 +621,12 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
      * @param nonce A nonce used to create a salt. Both the safe and module proxies share the same nonce.
      * @return moduleProxy The address of the deployed module proxy.
      */
-    function _deployModule(address safeProxyAddr, bytes32 defaultTarget, address caller, uint256 nonce)
+    function _deployModule(
+        address safeProxyAddr,
+        bytes32 defaultTarget,
+        address caller,
+        uint256 nonce
+    )
         private
         returns (address moduleProxy)
     {
@@ -640,7 +661,11 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
      * @return predicted The predicted address that the contract instance would have if deployed with the provided
      * implementation and salt.
      */
-    function predictModuleAddress(bytes32 salt, address safe, bytes32 defaultTarget)
+    function predictModuleAddress(
+        bytes32 salt,
+        address safe,
+        bytes32 defaultTarget
+    )
         public
         view
         returns (address predicted)
@@ -679,7 +704,12 @@ contract HoprNodeStakeFactory is HoprNodeStakeFactoryEvents, Ownable2Step, IERC7
      * @return predicted The predicted address that the module proxy would have if deployed by the specified deployer
      * with the provided nonce.
      */
-    function predictModuleAddress(address caller, uint256 nonce, address safe, bytes32 defaultTarget)
+    function predictModuleAddress(
+        address caller,
+        uint256 nonce,
+        address safe,
+        bytes32 defaultTarget
+    )
         public
         view
         returns (address predicted)

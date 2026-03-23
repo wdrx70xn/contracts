@@ -62,7 +62,10 @@ contract EnumerableKeyBindingSetTest is Test {
     /**
      * @dev fuzz test on add, length and contains
      */
-    function testFuzz_AddLengthContains(bytes32 pubkey1, bytes32 pubkey2)
+    function testFuzz_AddLengthContains(
+        bytes32 pubkey1,
+        bytes32 pubkey2
+    )
         public
         beforeEach
         respectCurveRangeSingle(pubkey1)
@@ -262,7 +265,10 @@ contract EnumerableKeyBindingSetTest is Test {
         return counter;
     }
 
-    function _compareKeyBinding(KeyBindingWithSignatureTimestamp memory a, KeyBindingWithSignatureTimestamp memory b)
+    function _compareKeyBinding(
+        KeyBindingWithSignatureTimestamp memory a,
+        KeyBindingWithSignatureTimestamp memory b
+    )
         private
         pure
         returns (bool)

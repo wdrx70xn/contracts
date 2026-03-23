@@ -14,7 +14,11 @@ import { HoprCrypto } from "../src/Crypto.sol";
 
 // proxy contract to make modifiers testable and manipulate storage
 contract MyHoprChannels is HoprChannels {
-    constructor(address _token, Timestamp _noticePeriodChannelClosure, HoprNodeSafeRegistry safeRegistry)
+    constructor(
+        address _token,
+        Timestamp _noticePeriodChannelClosure,
+        HoprNodeSafeRegistry safeRegistry
+    )
         HoprChannels(_token, _noticePeriodChannelClosure, safeRegistry)
     { }
 
@@ -57,7 +61,10 @@ contract MyHoprChannels is HoprChannels {
 
     function myValidateBalance(HoprChannelsType.Balance balance) public validateBalance(balance) { }
 
-    function myValidateChannelParties(address source, address destination)
+    function myValidateChannelParties(
+        address source,
+        address destination
+    )
         public
         validateChannelParties(source, destination)
     { }
@@ -593,7 +600,12 @@ contract HoprChannelsTest is Test, ERC1820RegistryFixtureTest, CryptoUtils, Hopr
         vm.clearMockedCalls();
     }
 
-    function testRevert_closeIncomingChannelNoFunds(address src, address dest, uint96 amount, uint48 ticketIndex)
+    function testRevert_closeIncomingChannelNoFunds(
+        address src,
+        address dest,
+        uint96 amount,
+        uint48 ticketIndex
+    )
         public
     {
         amount = uint96(bound(amount, MIN_USED_BALANCE, MAX_USED_BALANCE));
@@ -774,7 +786,11 @@ contract HoprChannelsTest is Test, ERC1820RegistryFixtureTest, CryptoUtils, Hopr
         vm.clearMockedCalls();
     }
 
-    function testRevert_initiateOutgoingChannelClosureWrongChannelState(address src, address dest, uint96 amount)
+    function testRevert_initiateOutgoingChannelClosureWrongChannelState(
+        address src,
+        address dest,
+        uint96 amount
+    )
         public
     {
         amount = uint96(bound(amount, MIN_USED_BALANCE, MAX_USED_BALANCE));

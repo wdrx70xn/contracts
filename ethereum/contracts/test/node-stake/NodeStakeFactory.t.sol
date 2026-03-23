@@ -383,7 +383,11 @@ contract HoprNodeStakeFactoryTest is
         vm.clearMockedCalls();
     }
 
-    function testFuzz_InitializeModuleProxy(uint256 nonce, address safeAddr, address multisendAddr)
+    function testFuzz_InitializeModuleProxy(
+        uint256 nonce,
+        address safeAddr,
+        address multisendAddr
+    )
         public
         mockTokenChannel
     {
@@ -464,7 +468,11 @@ contract HoprNodeStakeFactoryTest is
         vm.clearMockedCalls();
     }
 
-    function testRevert_CloneButFailToInitializeTwice(uint256 nonce, address safeAddr, address multisendAddr)
+    function testRevert_CloneButFailToInitializeTwice(
+        uint256 nonce,
+        address safeAddr,
+        address multisendAddr
+    )
         public
         mockTokenChannel
     {
@@ -570,7 +578,11 @@ contract HoprNodeStakeFactoryTest is
     /**
      * @dev internal function to ensure the safe and module are properly wired after cloning
      */
-    function _ensureSafeAndModuleAreWired(address moduleAddr, address payable safeAddr, address[] memory admins)
+    function _ensureSafeAndModuleAreWired(
+        address moduleAddr,
+        address payable safeAddr,
+        address[] memory admins
+    )
         internal
         view
     {
@@ -624,7 +636,12 @@ contract HoprNodeStakeFactoryTest is
     /**
      * @dev when caller is owner of safe instance, prepare a signature and execute the transaction
      */
-    function _helperSafeTxnToMultiSend(IAvatar safeInstance, uint256 senderPrivateKey, uint256 nonce, bytes memory data)
+    function _helperSafeTxnToMultiSend(
+        IAvatar safeInstance,
+        uint256 senderPrivateKey,
+        uint256 nonce,
+        bytes memory data
+    )
         private
     {
         address sender = vm.addr(senderPrivateKey);
@@ -712,7 +729,11 @@ contract HoprNodeStakeFactoryTest is
         (expectedSafeAddress2, expectedModuleAddress2) = _helperPredictSafeAndModule(admins2, callerSafe, nonce2);
     }
 
-    function _helperPredictSafeAndModule(address[] memory admins, address txCaller, uint256 nonce)
+    function _helperPredictSafeAndModule(
+        address[] memory admins,
+        address txCaller,
+        uint256 nonce
+    )
         private
         view
         returns (address expectedSafeAddress, address expectedModuleAddress)
@@ -721,7 +742,10 @@ contract HoprNodeStakeFactoryTest is
         expectedModuleAddress = factory.predictModuleAddress(txCaller, nonce, expectedSafeAddress, DEFAULT_TARGET);
     }
 
-    function _compareDeployment(SafeModuleDeployment memory a, SafeModuleDeployment memory b)
+    function _compareDeployment(
+        SafeModuleDeployment memory a,
+        SafeModuleDeployment memory b
+    )
         private
         pure
         returns (bool)

@@ -208,7 +208,13 @@ abstract contract HoprCrypto {
      * @param qY second component of Q
      * @param a curve parameter, y^2 = x^3 + a*x + b (mod p)
      */
-    function ecAdd(uint256 pX, uint256 pY, uint256 qX, uint256 qY, uint256 a)
+    function ecAdd(
+        uint256 pX,
+        uint256 pY,
+        uint256 qX,
+        uint256 qY,
+        uint256 a
+    )
         internal
         view
         returns (uint256 rx, uint256 ry)
@@ -661,7 +667,10 @@ abstract contract HoprCrypto {
      * @param dst domain separation tag, used to make protocol instantiations unique
      */
     /// forge-lint: disable-next-line(mixed-case-function)
-    function expand_message_xmd_keccak256(bytes memory message, bytes memory dst)
+    function expand_message_xmd_keccak256(
+        bytes memory message,
+        bytes memory dst
+    )
         internal
         pure
         returns (bytes32 b1, bytes32 b2, bytes32 b3)
@@ -766,7 +775,10 @@ abstract contract HoprCrypto {
      * @param dst domain separation tag, used to make protocol instantiations unique
      */
     /// forge-lint: disable-next-line(mixed-case-function)
-    function expand_message_xmd_keccak256_single(bytes memory message, bytes memory dst)
+    function expand_message_xmd_keccak256_single(
+        bytes memory message,
+        bytes memory dst
+    )
         internal
         pure
         returns (bytes32 b1, bytes32 b2)
