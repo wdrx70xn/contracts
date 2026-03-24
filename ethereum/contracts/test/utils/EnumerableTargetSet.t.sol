@@ -98,7 +98,10 @@ contract EnumerableTargetSetTest is Test {
     /**
      * @dev fuzz test on removing a non existing target address
      */
-    function testFuzz_RemoveNonExisting(uint256[] memory targetVals, address targetAddress)
+    function testFuzz_RemoveNonExisting(
+        uint256[] memory targetVals,
+        address targetAddress
+    )
         public
         limitSize(targetVals)
     {

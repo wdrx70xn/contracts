@@ -1,52 +1,46 @@
-################################################################################
-# Main pipeline to build the artifacts
-################################################################################
+#################################################################################
+##                      Pipeline to build on pull requests                     ##
+#################################################################################
 name: Build
 on:
-  merge_group:
-    types: [checks_requested]
-  pull_request_target:
+  pull_request:
     types:
       - opened
-      - ready_for_review
-      - reopened
-      - review_requested
       - synchronize
-permissions:
-  contents: write
-  actions: write
-  security-events: write
+      - reopened
+      - ready_for_review
 concurrency:
   group: ${{ github.event.pull_request.head.ref || github.ref_name }}-build
   cancel-in-progress: true
 jobs:
-  docs:
-    name: Docs
-    uses: ./.github/workflows/build-docs.yaml
-    secrets: inherit
+  build-library:
+    name: Library ${{ matrix.architecture }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64-linux
+            runner: self-hosted-hoprnet-bigger
+            build_command: nix build -L .#lib-hopr-bindings-x86_64-linux
+            required_label: ""
+          - architecture: aarch64-linux
+            runner: self-hosted-hoprnet-bigger
+            build_command: nix build -L .#lib-hopr-bindings-aarch64-linux
+            required_label: "binary:aarch64-linux"
+          - architecture: aarch64-darwin
+            runner: macos-15-xlarge
+            build_command: nix build -L .#lib-hopr-bindings-aarch64-darwin
+            required_label: binary:aarch64-darwin
+    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@build-library-v1
+    permissions:
+      contents: read
     with:
-      source_repo: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
-      publish: false
-  library:
-    name: Library
-    runs-on: self-hosted-hoprnet-bigger
-    timeout-minutes: 30
-    if: github.event.pull_request.draft == false
-    env:
-      CI: "true"
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
-        with:
-          disable-sudo: true
-          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
-      - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-          ref: ${{ github.event.pull_request.head.ref || github.ref }}
-          persist-credentials: false
-      - name: Build the workspace
-        run: |
-          nix develop -c cargo build
+      architecture: ${{ matrix.architecture }}
+      cachix_cache_name: contracts
+      build_file: ethereum/bindings/Cargo.toml
+      build_command: ${{ matrix.build_command }}
+      runner: ${{ matrix.runner }}
+      enabled: ${{ matrix.required_label == '' || contains(github.event.pull_request.labels.*.name, matrix.required_label) }}
+    secrets:
+      cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}

@@ -8,7 +8,7 @@ env:
 on:
   merge_group:
     types: [checks_requested]
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - synchronize
@@ -37,7 +37,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
           persist-credentials: false
       - name: Run unit tests
-        run: nix build -L .#hopr-test
+        run: nix build -L .#test
   tests-unit-nightly:
     name: Unit Tests Nightly
     runs-on: self-hosted-hoprnet-bigger
@@ -60,13 +60,12 @@ jobs:
       - name: Set up Google Cloud Credentials
         id: auth
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        if: ${{ !env.ACT }}
         with:
           token_format: "access_token"
-          credentials_json: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
+          credentials_json: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
       - name: Run unit tests nightly
         run: |
-          nix build -L .#hopr-test-nightly
+          nix build -L .#test-nightly
   tests-smart-contracts:
     runs-on: self-hosted-hoprnet-bigger
     name: Smart Contracts
@@ -87,10 +86,9 @@ jobs:
       - name: Set up Google Cloud Credentials
         id: auth
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        if: ${{ !env.ACT }}
         with:
           token_format: "access_token"
-          credentials_json: ${{ secrets.GOOGLE_HOPRASSOCIATION_CREDENTIALS_REGISTRY }}
+          credentials_json: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
       - name: Run tests
         run: nix develop -L -c make -j smart-contract-test
         env:

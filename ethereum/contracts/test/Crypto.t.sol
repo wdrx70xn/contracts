@@ -26,7 +26,13 @@ contract CryptoProxy is HoprCrypto {
         return scalarTimesBasepoint(scalar);
     }
 
-    function ecAddProxy(uint256 p_x, uint256 p_y, uint256 q_x, uint256 q_y, uint256 a)
+    function ecAddProxy(
+        uint256 p_x,
+        uint256 p_y,
+        uint256 q_x,
+        uint256 q_y,
+        uint256 a
+    )
         public
         view
         returns (uint256 r_x, uint256 r_y)
