@@ -238,6 +238,20 @@
               }
               // shellArgs
             );
+            ci = nixLib.mkDevShell {
+              rustToolchain = stableToolchain;
+              shellName = "CI";
+              treefmtWrapper = config.treefmt.build.wrapper;
+              treefmtPrograms = pkgs.lib.attrValues config.treefmt.build.programs;
+              extraPackages = with pkgs; [
+                zizmor
+              ];
+            };
+            coverage = nixLib.mkDevShell {
+              rustToolchainFile = ./rust-toolchain.toml;
+              shellName = "Coverage";
+              withLlvmTools = true;
+            };
           };
         in
         {
@@ -348,6 +362,14 @@
             update-github-labels = nixLib.mkUpdateGithubLabelsApp;
             check = nixLib.mkCheckApp { inherit system; };
             audit = nixLib.mkAuditApp { rustToolchainFile = ./rust-toolchain.toml; };
+            coverage-unit = {
+              type = "app";
+              program = toString (
+                pkgs.writeShellScript "coverage-unit" ''
+                  nix develop .#coverage -c cargo llvm-cov --workspace --lib --lcov --output-path coverage.lcov
+                ''
+              );
+            };
           };
 
           packages = {
