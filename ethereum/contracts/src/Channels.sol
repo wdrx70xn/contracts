@@ -188,7 +188,7 @@ contract HoprChannels is
     // minimum balance that must be added in a channel. No empty token transactions
     Balance public constant MIN_USED_BALANCE = Balance.wrap(1);
     // Version of the contract
-    string public constant VERSION = "2.0.0";
+    string public constant VERSION = "3.0.0";
 
     // ERC-777 tokensReceived hook, fundChannelMulti
     uint256 public immutable ERC777_HOOK_FUND_CHANNEL_MULTI_SIZE =

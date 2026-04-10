@@ -81,7 +81,7 @@ contract HoprNodeSafeRegistry is HoprNodeSafeRegistryEvents {
     }
 
     // Currently deployed version, starting with 1.0.0
-    string public constant VERSION = "1.0.0";
+    string public constant VERSION = "2.0.0";
 
     bytes32 public domainSeparator;
     mapping(address => NodeSafeRecord) _nodeToSafe;
