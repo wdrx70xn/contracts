@@ -104,7 +104,7 @@ contract HoprChannelsTest is Test, ERC1820RegistryFixtureTest, CryptoUtils, Hopr
         // Maximum balance accepted in channel funding
         assertEq(HoprChannelsType.Balance.unwrap(hoprChannels.MAX_USED_BALANCE()), 10 ** 25);
         // current veersioning
-        string memory currentVersiosn = "2.0.0";
+        string memory currentVersiosn = "3.0.0";
         assertEq(hoprChannels.VERSION(), currentVersiosn);
         // acceptable data payload size in ERC777 token send hook
         assertEq(hoprChannels.ERC777_HOOK_FUND_CHANNEL_MULTI_SIZE(), 64); // 20 + 96/8 + 20 + 96/8 = 64
@@ -181,7 +181,7 @@ contract HoprChannelsTest is Test, ERC1820RegistryFixtureTest, CryptoUtils, Hopr
         assertEq(hoprChannels.ERC777_HOOK_FUND_CHANNEL_MULTI_SIZE(), 64);
         assertEq(hoprChannels.ERC777_HOOK_FUND_CHANNEL_SIZE(), 40);
 
-        assertEq(hoprChannels.VERSION(), "2.0.0");
+        assertEq(hoprChannels.VERSION(), "3.0.0");
 
         // very unlikely that domainSeparator == bytes32(0)
         assertTrue(hoprChannels.domainSeparator() != bytes32(0));
