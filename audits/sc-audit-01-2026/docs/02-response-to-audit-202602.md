@@ -70,7 +70,7 @@ We periodically review gas-sensitive code paths and will revisit this decision i
 
 ### 3. HoprChannels version is still 2.0.0
 
-**Status:** <span style="background-color:#188038; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:0.85em;">Fixed</span>
+**Status:** <span style="background-color:#188038; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:0.85em;">Fixed</span> in commit `4ca7d56413b7699653569d402d1f5cc2bc0bc9c4`
 
 #### Assessment
 
@@ -89,7 +89,7 @@ In addition, we identified a similar inconsistency in `NodeSafeRegistry` contrac
 
 ### 4. HoprAnnouncements does not use storage gaps
 
-**Status:** <span style="background-color:#1a73e8; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:0.85em;">Acknowledged</span>
+**Status:** <span style="background-color:#188038; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:0.85em;">Fixed</span> in commit `490215b2ae86f2ff6f3c2696a526f1a9aeb0a621`.
 
 #### Assessment
 
