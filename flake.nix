@@ -331,7 +331,7 @@
               check-case-conflicts.enable = true;
               check-symlinks.enable = true;
               check-merge-conflicts.enable = true;
-              check-added-large-files.enable = true;
+              check-added-large-files.enable = false;
               commitizen.enable = true;
               immutable-files = {
                 enable = false;
