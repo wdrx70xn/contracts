@@ -114,7 +114,10 @@ library EnumerableKeyBindingSet {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(KeyBindingSet storage set, uint256 index)
+    function at(
+        KeyBindingSet storage set,
+        uint256 index
+    )
         internal
         view
         returns (KeyBindingWithSignatureTimestamp memory)
@@ -143,7 +146,10 @@ library EnumerableKeyBindingSet {
      *          Returns (false, 0, empty KeyBindingWithSignatureTimestamp) if the ed25519_pub_key is not in the set.
      */
     /// forge-lint:disable-next-line(mixed-case-variable)
-    function tryGet(KeyBindingSet storage set, bytes32 ed25519_pub_key)
+    function tryGet(
+        KeyBindingSet storage set,
+        bytes32 ed25519_pub_key
+    )
         internal
         view
         returns (bool, uint256, KeyBindingWithSignatureTimestamp memory)
@@ -164,7 +170,10 @@ library EnumerableKeyBindingSet {
      * - `ed25519_pub_key` key must be in the map.
      */
     /// forge-lint:disable-next-line(mixed-case-variable)
-    function get(KeyBindingSet storage set, bytes32 ed25519_pub_key)
+    function get(
+        KeyBindingSet storage set,
+        bytes32 ed25519_pub_key
+    )
         internal
         view
         returns (KeyBindingWithSignatureTimestamp memory)

@@ -92,7 +92,10 @@ library EnumerableSafeModuleSet {
      *          Returns (false, 0, empty SafeModuleDeployment) if the safeProxyInstance is not in the set.
      */
     /// forge-lint:disable-next-line(mixed-case-variable)
-    function tryGet(SafeModuleSet storage set, address safeProxyInstance)
+    function tryGet(
+        SafeModuleSet storage set,
+        address safeProxyInstance
+    )
         internal
         view
         returns (bool, uint256, SafeModuleDeployment memory)
@@ -113,7 +116,10 @@ library EnumerableSafeModuleSet {
      * - `safeProxyInstance` key must be in the map.
      */
     /// forge-lint:disable-next-line(mixed-case-variable)
-    function get(SafeModuleSet storage set, address safeProxyInstance)
+    function get(
+        SafeModuleSet storage set,
+        address safeProxyInstance
+    )
         internal
         view
         returns (SafeModuleDeployment memory)

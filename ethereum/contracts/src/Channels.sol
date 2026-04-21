@@ -347,7 +347,10 @@ contract HoprChannels is
     /**
      * See `_redeemTicketInternal`
      */
-    function redeemTicket(RedeemableTicket calldata redeemable, HoprCrypto.VRFParameters calldata params)
+    function redeemTicket(
+        RedeemableTicket calldata redeemable,
+        HoprCrypto.VRFParameters calldata params
+    )
         external
         HoprMultiSig.noSafeSet
     {
@@ -488,7 +491,10 @@ contract HoprChannels is
     /**
      * See `_initiateOutgoingChannelClosureInternal`, entrypoint for MultiSig contract
      */
-    function initiateOutgoingChannelClosureSafe(address selfAddress, address destination)
+    function initiateOutgoingChannelClosureSafe(
+        address selfAddress,
+        address destination
+    )
         external
         HoprMultiSig.onlySafe(selfAddress)
     {
@@ -584,7 +590,10 @@ contract HoprChannels is
     /**
      * See `_finalizeOutgoingChannelClosureInternal`, entrypoint for MultiSig contract
      */
-    function finalizeOutgoingChannelClosureSafe(address selfAddress, address destination)
+    function finalizeOutgoingChannelClosureSafe(
+        address selfAddress,
+        address destination
+    )
         external
         HoprMultiSig.onlySafe(selfAddress)
     {
@@ -748,7 +757,11 @@ contract HoprChannels is
      * @param account address of the destination
      * @param amount amount to fund for channel
      */
-    function fundChannelSafe(address selfAddress, address account, Balance amount)
+    function fundChannelSafe(
+        address selfAddress,
+        address account,
+        Balance amount
+    )
         external
         HoprMultiSig.onlySafe(selfAddress)
     {
@@ -785,7 +798,11 @@ contract HoprChannels is
      * @param account destination address
      * @param amount token amount
      */
-    function _fundChannelInternal(address selfAddress, address account, Balance amount)
+    function _fundChannelInternal(
+        address selfAddress,
+        address account,
+        Balance amount
+    )
         internal
         validateBalance(amount)
         validateChannelParties(selfAddress, account)
@@ -860,8 +877,7 @@ contract HoprChannels is
         // Tickets get signed and transferred in packed encoding, consuming
         // 144 bytes, including signature and challenge. Using tight encoding
         // for ticket hash unifies on-chain and off-chain usage of tickets.
-        uint256 secondPart =
-            (uint256(Balance.unwrap(redeemable.data.amount)) << 128)
+        uint256 secondPart = (uint256(Balance.unwrap(redeemable.data.amount)) << 128)
             | (uint256(TicketIndex.unwrap(redeemable.data.ticketIndex)) << 80)
             | (uint256(ChannelEpoch.unwrap(redeemable.data.epoch)) << 56)
             | uint256(WinProb.unwrap(redeemable.data.winProb));
@@ -899,7 +915,8 @@ contract HoprChannels is
     {
         // hash function produces 256 bits output but we require only first 56 bits (IEEE 754 double precision means 53
         // signifcant bits)
-        uint56 ticketProb = (uint56(
+        uint56 ticketProb =
+            (uint56(
                 bytes7(
                     keccak256(
                         abi.encodePacked(

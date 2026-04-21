@@ -69,7 +69,11 @@ abstract contract CryptoUtils is Test, HoprCrypto, SECP2561k {
         vrf = getVRFParameters(args.privKeyB, abi.encodePacked(args.dst), ticketHash);
     }
 
-    function toCompactSignature(uint8 v, bytes32 r, bytes32 s)
+    function toCompactSignature(
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    )
         internal
         pure
         returns (HoprCrypto.CompactSignature memory sig)
@@ -81,7 +85,10 @@ abstract contract CryptoUtils is Test, HoprCrypto, SECP2561k {
         sig.vs = bytes32(uint256(v - 27) << 255) | s;
     }
 
-    function decompressSignature(bytes32 r, bytes32 vs)
+    function decompressSignature(
+        bytes32 r,
+        bytes32 vs
+    )
         internal
         pure
         returns (uint8 v_out, bytes32 r_out, bytes32 s_out)
@@ -92,7 +99,11 @@ abstract contract CryptoUtils is Test, HoprCrypto, SECP2561k {
     }
 
     /// forge-lint: disable-next-line(mixed-case-function)
-    function getVRFParameters(uint256 privKey, bytes memory dst, bytes32 vrfMessage)
+    function getVRFParameters(
+        uint256 privKey,
+        bytes memory dst,
+        bytes32 vrfMessage
+    )
         internal
         view
         returns (HoprCrypto.VRFParameters memory params)

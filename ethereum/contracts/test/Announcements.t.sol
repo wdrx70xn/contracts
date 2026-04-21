@@ -562,7 +562,10 @@ contract AnnouncementsTest is Test, ERC1820RegistryFixtureTest, HoprAnnouncement
         return counter;
     }
 
-    function _compareKeyBinding(KeyBindingWithSignatureTimestamp memory a, KeyBindingWithSignatureTimestamp memory b)
+    function _compareKeyBinding(
+        KeyBindingWithSignatureTimestamp memory a,
+        KeyBindingWithSignatureTimestamp memory b
+    )
         private
         pure
         returns (bool)

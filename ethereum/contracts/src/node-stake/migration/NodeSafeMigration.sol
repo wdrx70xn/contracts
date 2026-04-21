@@ -108,7 +108,10 @@ contract HoprNodeSafeMigration is HoprNodeSafeMigrationEvents, SafeMigration, Ex
      * @param moduleSingleton Address of the Module Singleton
      * @param nodeStakeFactory Address of the HoprNodeStakeFactory contract
      */
-    constructor(address moduleSingleton, address nodeStakeFactory)
+    constructor(
+        address moduleSingleton,
+        address nodeStakeFactory
+    )
         SafeMigration(
             SafeSuiteLibV150.SAFE_SafeL2_ADDRESS,
             SafeSuiteLibV141.SAFE_SafeL2_ADDRESS,
@@ -126,7 +129,10 @@ contract HoprNodeSafeMigration is HoprNodeSafeMigrationEvents, SafeMigration, Ex
      * @dev This function is
      * @param moduleProxy Address of the module proxy
      */
-    function migrateModuleSingleton(address moduleProxy, bytes memory data)
+    function migrateModuleSingleton(
+        address moduleProxy,
+        bytes memory data
+    )
         public
         onlyDelegateCall
         onlyEnabledModule(moduleProxy)
@@ -189,7 +195,11 @@ contract HoprNodeSafeMigration is HoprNodeSafeMigrationEvents, SafeMigration, Ex
      * @param nodes List of node addresses to be included in the new module
      * @return newModuleProxy Address of the newly deployed module proxy
      */
-    function deployNewV4Module(bytes32 defaultTarget, uint256 nonce, address[] memory nodes)
+    function deployNewV4Module(
+        bytes32 defaultTarget,
+        uint256 nonce,
+        address[] memory nodes
+    )
         public
         onlyDelegateCall
         returns (address newModuleProxy)

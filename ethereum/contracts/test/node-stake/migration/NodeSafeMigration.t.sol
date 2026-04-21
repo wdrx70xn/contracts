@@ -336,7 +336,12 @@ contract NodeSafeMigrationTest is
         vm.clearMockedCalls();
     }
 
-    function _helperSafeTxnDelegateCall(address to, IAvatar safeInstance, uint256 senderPrivateKey, bytes memory data)
+    function _helperSafeTxnDelegateCall(
+        address to,
+        IAvatar safeInstance,
+        uint256 senderPrivateKey,
+        bytes memory data
+    )
         private
     {
         address sender = vm.addr(senderPrivateKey);

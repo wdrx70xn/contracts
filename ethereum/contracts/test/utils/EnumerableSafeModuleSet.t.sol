@@ -192,7 +192,10 @@ contract EnumerableSafeModuleSetTest is Test {
         return counter;
     }
 
-    function _compareSafeModule(SafeModuleDeployment memory a, SafeModuleDeployment memory b)
+    function _compareSafeModule(
+        SafeModuleDeployment memory a,
+        SafeModuleDeployment memory b
+    )
         private
         pure
         returns (bool)

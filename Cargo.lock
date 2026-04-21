@@ -1737,7 +1737,7 @@ dependencies = [
 
 [[package]]
 name = "hopr-bindings"
-version = "4.7.0"
+version = "4.7.3"
 dependencies = [
  "alloy",
  "anyhow",

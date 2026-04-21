@@ -270,7 +270,10 @@ contract HoprAnnouncements is
      * @dev Announces a new multiaddress for the sender.
      *     MUST be called by the Safe contract associated with the node in the NodeSafeRegistry
      */
-    function announceSafe(address selfAddress, string calldata baseMultiaddr)
+    function announceSafe(
+        address selfAddress,
+        string calldata baseMultiaddr
+    )
         external
         HoprMultiSig.onlySafe(selfAddress)
     {

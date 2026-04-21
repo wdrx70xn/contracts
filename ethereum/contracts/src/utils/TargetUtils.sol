@@ -92,7 +92,10 @@ library TargetUtils {
         return TargetPermission(uint8((Target.unwrap(target) << 176) >> 248));
     }
 
-    function getDefaultCapabilityPermissionAt(Target target, uint256 position)
+    function getDefaultCapabilityPermissionAt(
+        Target target,
+        uint256 position
+    )
         internal
         pure
         returns (CapabilityPermission)

@@ -346,7 +346,10 @@ contract HoprNodeManagementModuleTest is
     /**
      * @dev fail to add channels target(s) when the account has been scopec
      */
-    function testRevert_ScopeExistingTargetChannelsFromModule(address[] memory channelsAddresses, uint256 randomIndex)
+    function testRevert_ScopeExistingTargetChannelsFromModule(
+        address[] memory channelsAddresses,
+        uint256 randomIndex
+    )
         public
     {
         vm.assume(channelsAddresses.length > 0);
@@ -415,7 +418,10 @@ contract HoprNodeManagementModuleTest is
     /**
      * @dev fail to add token target(s) when the account has been scopec
      */
-    function testRevert_ScopeExistingTargetTokenFromModule(address[] memory tokenAddresses, uint256 randomIndex)
+    function testRevert_ScopeExistingTargetTokenFromModule(
+        address[] memory tokenAddresses,
+        uint256 randomIndex
+    )
         public
     {
         vm.assume(tokenAddresses.length > 0);
@@ -1416,7 +1422,10 @@ contract HoprNodeManagementModuleTest is
      * @dev return an array with all unique addresses which does not contain address zeo
      * return a random item
      */
-    function _helperGetUniqueAddressArrayAndRandomItem(address[] memory addrs, uint256 randomIndex)
+    function _helperGetUniqueAddressArrayAndRandomItem(
+        address[] memory addrs,
+        uint256 randomIndex
+    )
         private
         pure
         returns (address[] memory, address)
