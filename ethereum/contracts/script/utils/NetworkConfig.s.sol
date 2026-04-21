@@ -27,6 +27,7 @@ contract NetworkConfig is Script {
         address ticketPriceOracleContractAddress;
         address tokenContractAddress;
         address winningProbabilityContractAddress;
+        address xhoprTokenContractAddress;
     }
 
     struct NetworkDetailIntermediate {
@@ -115,6 +116,7 @@ contract NetworkConfig is Script {
         addresses = addresses.serialize(
             "winning_probability_oracle", networkDetail.addresses.winningProbabilityContractAddress
         );
+        addresses.serialize("xhopr_token", networkDetail.addresses.xhoprTokenContractAddress);
 
         obj.serialize("addresses", addresses);
         obj.serialize("chain_id", networkDetail.chainId);
@@ -214,6 +216,16 @@ contract NetworkConfig is Script {
                 abi.encodePacked(
                     '"winning_probability_oracle_contract_address": "',
                     vm.toString(networkDetail.addresses.winningProbabilityContractAddress),
+                    '",'
+                )
+            )
+        );
+        vm.writeLine(
+            filePath,
+            string(
+                abi.encodePacked(
+                    '"xhopr_token_contract_address": "',
+                    vm.toString(networkDetail.addresses.xhoprTokenContractAddress),
                     '",'
                 )
             )
