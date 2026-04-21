@@ -37,6 +37,9 @@ pub struct ContractAddresses {
     /// Minimum ticket winning probability contract
     #[serde_as(as = "DisplayFromStr")]
     pub winning_probability_oracle: Address,
+    /// XHOPR token contract
+    #[serde_as(as = "DisplayFromStr")]
+    pub xhopr_token: Address,
 }
 
 impl IntoIterator for &ContractAddresses {
@@ -54,6 +57,7 @@ impl IntoIterator for &ContractAddresses {
             self.winning_probability_oracle,
             self.node_stake_factory,
             self.module_implementation,
+            self.xhopr_token,
         ]
         .into_iter()
     }
