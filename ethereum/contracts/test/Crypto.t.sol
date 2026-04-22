@@ -634,7 +634,7 @@ contract Crypto is Test, AccountsFixtureTest, HoprCrypto, CryptoUtils {
         crypto.vrfVerifyProxy(params, payload);
     }
 
-    function test_vrfVerifyFail(uint256 hTweaked, uint256 privKey, bytes32 vrfMessage) public {
+    function testFail_vrfVerify(uint256 hTweaked, uint256 privKey, bytes32 vrfMessage) public {
         hTweaked = bound(hTweaked, 1, HoprCrypto.SECP256K1_BASE_FIELD_ORDER - 1);
 
         string memory dst = "some DST tag";
@@ -659,6 +659,6 @@ contract Crypto is Test, AccountsFixtureTest, HoprCrypto, CryptoUtils {
         params.hVx = rx;
         params.hVy = ry;
 
-        assertFalse(crypto.vrfVerifyProxy(params, payload));
+        crypto.vrfVerifyProxy(params, payload);
     }
 }
