@@ -113,9 +113,7 @@ contract NetworkConfig is Script {
         addresses.serialize("node_stake_factory", networkDetail.addresses.nodeStakeFactoryAddress);
         addresses.serialize("ticket_price_oracle", networkDetail.addresses.ticketPriceOracleContractAddress);
         addresses.serialize("token", networkDetail.addresses.tokenContractAddress);
-        addresses.serialize(
-            "winning_probability_oracle", networkDetail.addresses.winningProbabilityContractAddress
-        );
+        addresses.serialize("winning_probability_oracle", networkDetail.addresses.winningProbabilityContractAddress);
         addresses = addresses.serialize("xhopr_token", networkDetail.addresses.xhoprTokenContractAddress);
 
         obj.serialize("addresses", addresses);
