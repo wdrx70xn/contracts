@@ -1,13 +1,14 @@
 name: PR
-on:
+'on':
   merge_group:
-    types: [checks_requested]
+    types:
+    - checks_requested
   pull_request:
     types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
 permissions:
   contents: read
 concurrency:
@@ -17,62 +18,71 @@ jobs:
   validate-pr-title:
     name: Validate title
     if: github.event_name == 'pull_request'
-    runs-on: self-hosted-hoprnet-small
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: read
     steps:
-      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            fix
-            feat
-            build
-            chore
-            docs
-            style
-            refactor
-            perf
-            test
-          requireScope: false
-          ignoreLabels: |
-            bot
-            ignore-semantic-pull-request
+    - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        types: 'fix
+
+          feat
+
+          build
+
+          chore
+
+          docs
+
+          style
+
+          refactor
+
+          perf
+
+          test
+
+          '
+        requireScope: false
+        ignoreLabels: 'bot
+
+          ignore-semantic-pull-request
+
+          '
   label:
     name: Add labels
     if: github.event_name == 'pull_request'
-    runs-on: self-hosted-hoprnet-small
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
       pull-requests: write
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
-        with:
-          disable-sudo: true
-          egress-policy: audit
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - uses: actions/labeler@77a4082b841706ac431479b7e2bb11216ffef250 # main on 20.02.2025
-        with:
-          sync-labels: true
-      - name: Add "external" label for forked PRs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_REPO: ${{ github.repository }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          if [[ "$HEAD_REPO" != "$BASE_REPO" ]]; then
-            gh pr edit "$PR_NUMBER" --add-label "external"
-          fi
+    - name: Harden Runner
+      uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40
+      with:
+        disable-sudo: true
+        egress-policy: audit
+    - name: Checkout repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        persist-credentials: false
+    - uses: actions/labeler@77a4082b841706ac431479b7e2bb11216ffef250
+      with:
+        sync-labels: true
+    - name: Add "external" label for forked PRs
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BASE_REPO: ${{ github.repository }}
+        HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: "if [[ \"$HEAD_REPO\" != \"$BASE_REPO\" ]]; then\n  gh pr edit \"$PR_NUMBER\"\
+        \ --add-label \"external\"\nfi\n"
   checks:
     name: Check
-    uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@bbd22e57cf954c15f0a6051d59329857809141dd # workflow-checks-v1
+    uses: hoprnet/hopr-workflows/.github/workflows/checks.yaml@bbd22e57cf954c15f0a6051d59329857809141dd
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
       runner_small: self-hosted-hoprnet-small
@@ -82,15 +92,15 @@ jobs:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
   tests:
     name: Test
-    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@268553d7984344080e3dc65eb92778c9103af7ec # workflow-tests-v3
+    uses: hoprnet/hopr-workflows/.github/workflows/tests.yaml@268553d7984344080e3dc65eb92778c9103af7ec
     with:
       source_branch: ${{ github.event.pull_request.head.ref || github.ref }}
       unit_tests: true
-      unit_test_command: "nix build -L .#test"
+      unit_test_command: nix build -L .#test
       nightly_tests: true
-      nightly_test_command: "nix build -L .#test-nightly"
+      nightly_test_command: nix build -L .#test-nightly
       unit_coverage: true
-      unit_coverage_command: "nix run .#coverage-unit"
+      unit_coverage_command: nix run .#coverage-unit
       runner: self-hosted-hoprnet-bigger
       test_timeout: 60
     secrets:
@@ -98,52 +108,53 @@ jobs:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
   tests-smart-contracts:
     name: Smart Contracts
-    runs-on: self-hosted-hoprnet-bigger
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     if: github.event.pull_request.draft == false
     env:
       FOUNDRY_PROFILE: ci
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
-        with:
-          disable-sudo: true
-          egress-policy: audit
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-          ref: ${{ github.event.pull_request.head.ref || github.ref }}
-          persist-credentials: false
-      - name: Set up Google Cloud Credentials
-        id: auth
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
-        with:
-          token_format: "access_token"
-          credentials_json: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
-      - name: Run tests
-        env:
-          HOPR_NETWORK: anvil-localhost
-        run: nix develop -L -c make -j smart-contract-test
+    - name: Harden Runner
+      uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40
+      with:
+        disable-sudo: true
+        egress-policy: audit
+    - name: Checkout repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      with:
+        repository: ${{ github.event.pull_request.head.repo.full_name || github.repository
+          }}
+        ref: ${{ github.event.pull_request.head.ref || github.ref }}
+        persist-credentials: false
+    - name: Set up Google Cloud Credentials
+      id: auth
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+      with:
+        token_format: access_token
+        credentials_json: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
+    - name: Run tests
+      env:
+        HOPR_NETWORK: anvil-localhost
+      run: nix develop -L -c make -j smart-contract-test
   build-library:
     name: Library ${{ matrix.architecture }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - architecture: x86_64-linux
-            runner: self-hosted-hoprnet-bigger
-            build_command: nix build -L .#lib-hopr-bindings-x86_64-linux
-            required_label: ""
-          - architecture: aarch64-linux
-            runner: self-hosted-hoprnet-bigger
-            build_command: nix build -L .#lib-hopr-bindings-aarch64-linux
-            required_label: "binary:aarch64-linux"
-          - architecture: aarch64-darwin
-            runner: macos-15-xlarge
-            build_command: nix build -L .#lib-hopr-bindings-aarch64-darwin
-            required_label: binary:aarch64-darwin
-    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@5ef5e50e028143b53da6545c1ca92477b70f42fc # build-library-v1
+        - architecture: x86_64-linux
+          runner: self-hosted-hoprnet-bigger
+          build_command: nix build -L .#lib-hopr-bindings-x86_64-linux
+          required_label: ''
+        - architecture: aarch64-linux
+          runner: self-hosted-hoprnet-bigger
+          build_command: nix build -L .#lib-hopr-bindings-aarch64-linux
+          required_label: binary:aarch64-linux
+        - architecture: aarch64-darwin
+          runner: macos-15-xlarge
+          build_command: nix build -L .#lib-hopr-bindings-aarch64-darwin
+          required_label: binary:aarch64-darwin
+    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@5ef5e50e028143b53da6545c1ca92477b70f42fc
     permissions:
       contents: read
     with:
@@ -153,13 +164,15 @@ jobs:
       build_file: ethereum/bindings/Cargo.toml
       build_command: ${{ matrix.build_command }}
       runner: ${{ matrix.runner }}
-      enabled: ${{ matrix.required_label == '' || contains(github.event.pull_request.labels.*.name, matrix.required_label) }}
+      enabled: ${{ matrix.required_label == '' || contains(github.event.pull_request.labels.*.name,
+        matrix.required_label) }}
     secrets:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
   publish-dry-run:
     name: Publish
-    needs: [tests]
-    uses: hoprnet/hopr-workflows/.github/workflows/publish-crates.yaml@e4fadaa70234b9d734d5c51b6900602e55492ce2 # workflow-publish-crates-v3
+    needs:
+    - tests
+    uses: hoprnet/hopr-workflows/.github/workflows/publish-crates.yaml@e4fadaa70234b9d734d5c51b6900602e55492ce2
     permissions:
       contents: read
     with:
