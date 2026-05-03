@@ -1,17 +1,17 @@
 name: Close release
-on:
+'on':
   workflow_dispatch:
     inputs:
       release_type:
         description: Version type after release
         required: true
         type: choice
-        default: "patch"
+        default: patch
         options:
-          - rc
-          - patch
-          - minor
-          - major
+        - rc
+        - patch
+        - minor
+        - major
 concurrency:
   group: release
   cancel-in-progress: false
@@ -22,10 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - architecture: x86_64-linux
-            runner: self-hosted-hoprnet-bigger
-            build_command: nix build -L .#lib-hopr-bindings-x86_64-linux
-    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@5ef5e50e028143b53da6545c1ca92477b70f42fc # build-library-v1
+        - architecture: x86_64-linux
+          runner: self-hosted-hoprnet-bigger
+          build_command: nix build -L .#lib-hopr-bindings-x86_64-linux
+    uses: hoprnet/hopr-workflows/.github/workflows/build-library.yaml@5ef5e50e028143b53da6545c1ca92477b70f42fc
     permissions:
       contents: read
     with:
@@ -39,8 +39,9 @@ jobs:
       cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
   publish:
     name: Publish
-    needs: [build-library]
-    uses: hoprnet/hopr-workflows/.github/workflows/publish-crates.yaml@e4fadaa70234b9d734d5c51b6900602e55492ce2 # workflow-publish-crates-v3
+    needs:
+    - build-library
+    uses: hoprnet/hopr-workflows/.github/workflows/publish-crates.yaml@e4fadaa70234b9d734d5c51b6900602e55492ce2
     permissions:
       contents: read
     with:
@@ -55,22 +56,22 @@ jobs:
   release:
     name: Close release
     needs:
-      - publish
-    runs-on: self-hosted-hoprnet-small
+    - publish
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Release version
-        uses: hoprnet/hopr-workflows/actions/release-version@4e3c270b51ed1817bc0b0f6996dfc8a7b0e757c1 # release-version-v2
-        with:
-          source_branch: ${{ github.ref_name }}
-          file: ethereum/bindings/Cargo.toml
-          release_type: "${{ inputs.release_type }}"
-          cachix_cache_name: "contracts"
-          cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
-          zulip_email: ${{ secrets.ZULIP_EMAIL }}
-          zulip_channel: "HOPRd"
-          zulip_topic: "Releases"
-          gcp_service_account: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
-          github_token: ${{ secrets.GH_RUNNER_TOKEN }}
+    - name: Release version
+      uses: hoprnet/hopr-workflows/actions/release-version@4e3c270b51ed1817bc0b0f6996dfc8a7b0e757c1
+      with:
+        source_branch: ${{ github.ref_name }}
+        file: ethereum/bindings/Cargo.toml
+        release_type: ${{ inputs.release_type }}
+        cachix_cache_name: contracts
+        cachix_auth_token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        zulip_api_key: ${{ secrets.ZULIP_API_KEY }}
+        zulip_email: ${{ secrets.ZULIP_EMAIL }}
+        zulip_channel: HOPRd
+        zulip_topic: Releases
+        gcp_service_account: ${{ secrets.GCP_SA_GITHUB_RUNNER }}
+        github_token: ${{ secrets.GH_RUNNER_TOKEN }}
